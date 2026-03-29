@@ -1,11 +1,12 @@
 import { useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { AlarmClock, Flame, Pause, Play, RotateCcw, Skull } from 'lucide-react'
 import { Badge, Button, Card, GhostButton, Input, Label } from '../../components/ui'
 import { formatClock } from '../../lib/utils'
 import { useAppStore } from '../../store/useAppStore'
 
 export function FocusPage() {
+  const reduced = useReducedMotion()
   const focus = useAppStore((state) => state.focus)
   const startFocus = useAppStore((state) => state.startFocus)
   const pauseFocus = useAppStore((state) => state.pauseFocus)
@@ -13,6 +14,10 @@ export function FocusPage() {
   const tickFocus = useAppStore((state) => state.tickFocus)
   const setFocusPreset = useAppStore((state) => state.setFocusPreset)
   const addDistraction = useAppStore((state) => state.addDistraction)
+  const totalSeconds = (focus.phase === 'focus' ? focus.focusMinutes : focus.breakMinutes) * 60
+  const progress = totalSeconds > 0 ? 1 - focus.remainingSeconds / totalSeconds : 0
+  const radius = 54
+  const circumference = 2 * Math.PI * radius
 
   useEffect(() => {
     if (!focus.isRunning) return
@@ -30,16 +35,36 @@ export function FocusPage() {
           </div>
           <Badge>{focus.phase}</Badge>
         </div>
-        <motion.div animate={{ scale: focus.isRunning ? [1, 1.01, 1] : 1 }} transition={{ duration: 1.4, repeat: focus.isRunning ? Number.POSITIVE_INFINITY : 0 }} className="grid place-items-center rounded-[2rem] border border-cyan-400/20 bg-[var(--app-surface-strong)] py-12 shadow-inner shadow-cyan-500/5">
-          <p className="text-sm uppercase tracking-[0.3em] text-cyan-500/80">Remaining</p>
-          <p className="mt-3 text-6xl font-black sm:text-7xl">{formatClock(focus.remainingSeconds)}</p>
+        <motion.div animate={reduced ? { scale: 1 } : { scale: focus.isRunning ? [1, 1.01, 1] : 1 }} transition={{ duration: 1.4, repeat: focus.isRunning && !reduced ? Number.POSITIVE_INFINITY : 0 }} className="grid place-items-center rounded-[2rem] border border-cyan-400/20 bg-[var(--app-surface-strong)] py-10 shadow-inner shadow-cyan-500/5">
+          <div className="relative grid place-items-center">
+            <svg className="h-48 w-48 -rotate-90" viewBox="0 0 128 128" aria-hidden="true">
+              <circle cx="64" cy="64" r={radius} stroke="rgba(148,163,184,0.18)" strokeWidth="10" fill="none" />
+              <motion.circle
+                cx="64"
+                cy="64"
+                r={radius}
+                stroke="rgba(34,211,238,0.9)"
+                strokeWidth="10"
+                strokeLinecap="round"
+                fill="none"
+                strokeDasharray={circumference}
+                initial={false}
+                animate={{ strokeDashoffset: circumference * (1 - progress) }}
+                transition={{ type: 'spring', stiffness: 120, damping: 28 }}
+              />
+            </svg>
+            <div className="absolute grid place-items-center">
+              <p className="text-sm uppercase tracking-[0.3em] text-cyan-500/80">Remaining</p>
+              <p className="mt-3 text-6xl font-black sm:text-7xl">{formatClock(focus.remainingSeconds)}</p>
+            </div>
+          </div>
         </motion.div>
-          <div className="flex flex-wrap gap-3">
+        <motion.div className="flex flex-wrap gap-3" initial={false} animate={{ opacity: 1 }}>
             <Button onClick={startFocus}><Play className="mr-2 h-4 w-4" />Start</Button>
             <GhostButton onClick={pauseFocus}><Pause className="mr-2 h-4 w-4" />Pause</GhostButton>
             <GhostButton onClick={resetFocus}><RotateCcw className="mr-2 h-4 w-4" />Reset</GhostButton>
             <GhostButton onClick={addDistraction}><Skull className="mr-2 h-4 w-4" />Add distraction</GhostButton>
-          </div>
+          </motion.div>
       </Card>
 
       <div className="space-y-4">

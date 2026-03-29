@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { AnimatePresence, motion } from 'framer-motion'
-import { CalendarPlus, Clock3, TriangleAlert } from 'lucide-react'
+import { CalendarPlus, CheckCircle2, Clock3, TriangleAlert } from 'lucide-react'
 import dayjs from 'dayjs'
 import { z } from 'zod'
 import { Badge, Button, Card, GhostButton, Input, Label, Modal } from '../../components/ui'
@@ -22,12 +22,29 @@ type ClassForm = z.infer<typeof classSchema>
 
 const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
 
+const formVariants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.06, delayChildren: 0.03 } },
+}
+
+const fieldVariants = {
+  hidden: { opacity: 0, y: 8 },
+  show: { opacity: 1, y: 0 },
+}
+
 export function TimetablePage() {
   const classes = useAppStore((state) => state.classes)
   const addClass = useAppStore((state) => state.addClass)
   const deleteClass = useAppStore((state) => state.deleteClass)
   const [open, setOpen] = useState(false)
   const [clash, setClash] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    if (!saved) return
+    const timer = window.setTimeout(() => setSaved(false), 900)
+    return () => window.clearTimeout(timer)
+  }, [saved])
 
   const { register, handleSubmit, reset } = useForm<ClassForm>({
     resolver: zodResolver(classSchema),
@@ -55,7 +72,8 @@ export function TimetablePage() {
     setClash(!result.ok)
     if (result.ok) {
       reset()
-      setOpen(false)
+      setSaved(true)
+      window.setTimeout(() => setOpen(false), 260)
     }
   })
 
@@ -106,43 +124,52 @@ export function TimetablePage() {
       </div>
 
       <Modal open={open} title="Add class" onClose={() => setOpen(false)}>
-        <form className="space-y-4" onSubmit={onSubmit}>
+        <motion.form className="space-y-4" onSubmit={onSubmit} initial="hidden" animate="show" variants={formVariants}>
           <div className="grid gap-4 md:grid-cols-2">
-            <div>
+            <motion.div variants={fieldVariants}>
               <Label htmlFor="day">Day</Label>
               <Input id="day" {...register('day')} placeholder="Mon" />
-            </div>
-            <div>
+            </motion.div>
+            <motion.div variants={fieldVariants}>
               <Label htmlFor="subject">Subject</Label>
               <Input id="subject" {...register('subject')} />
-            </div>
+            </motion.div>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            <div>
+            <motion.div variants={fieldVariants}>
               <Label htmlFor="faculty">Faculty</Label>
               <Input id="faculty" {...register('faculty')} />
-            </div>
-            <div>
+            </motion.div>
+            <motion.div variants={fieldVariants}>
               <Label htmlFor="room">Room</Label>
               <Input id="room" {...register('room')} />
-            </div>
+            </motion.div>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            <div>
+            <motion.div variants={fieldVariants}>
               <Label htmlFor="startTime">Start</Label>
               <Input id="startTime" type="text" inputMode="numeric" placeholder="HH:MM" {...register('startTime')} />
-            </div>
-            <div>
+            </motion.div>
+            <motion.div variants={fieldVariants}>
               <Label htmlFor="endTime">End</Label>
               <Input id="endTime" type="text" inputMode="numeric" placeholder="HH:MM" {...register('endTime')} />
+            </motion.div>
+          </div>
+          <motion.p variants={fieldVariants} className="text-xs text-[var(--app-muted)]">Use 24-hour format like 09:30.</motion.p>
+          <motion.div variants={fieldVariants} className="flex items-center justify-between gap-2">
+            <motion.div
+              initial={false}
+              animate={saved ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.92 }}
+              className="flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-200"
+            >
+              <CheckCircle2 className="h-4 w-4" /> Saved
+            </motion.div>
+            <div className="flex gap-2">
+              <GhostButton type="button" onClick={() => setOpen(false)}>Cancel</GhostButton>
+              <Button type="submit">Save class</Button>
             </div>
-          </div>
-          <p className="text-xs text-[var(--app-muted)]">Use 24-hour format like 09:30.</p>
-          <div className="flex justify-end gap-2">
-            <GhostButton type="button" onClick={() => setOpen(false)}>Cancel</GhostButton>
-            <Button type="submit">Save class</Button>
-          </div>
-        </form>
+          </motion.div>
+        </motion.form>
       </Modal>
     </div>
   )

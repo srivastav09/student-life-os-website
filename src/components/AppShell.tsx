@@ -65,15 +65,20 @@ export function AppShell({ children }: { children: ReactNode }) {
                 to={to}
                 className={({ isActive }) =>
                   cn(
-                    'flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-medium transition',
+                    'relative flex items-center gap-3 overflow-hidden rounded-2xl border px-4 py-3 text-sm font-medium transition',
                     isActive
-                      ? 'border-cyan-400/50 bg-cyan-400/15 text-cyan-600'
+                      ? 'border-cyan-400/40 text-[var(--app-fg)]'
                       : 'border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-muted)] hover:opacity-90 hover:text-[var(--app-fg)]',
                   )
                 }
               >
-                <Icon className="h-4 w-4" />
-                {label}
+                {({ isActive }) => (
+                  <>
+                    {isActive ? <motion.span layoutId="nav-pill-desktop" className="absolute inset-0 rounded-2xl bg-cyan-400/15" transition={{ type: 'spring', stiffness: 500, damping: 40 }} /> : null}
+                    <Icon className="relative z-10 h-4 w-4" />
+                    <span className="relative z-10">{label}</span>
+                  </>
+                )}
               </NavLink>
             ))}
           </nav>
@@ -88,13 +93,18 @@ export function AppShell({ children }: { children: ReactNode }) {
               to={to}
               className={({ isActive }) =>
                   cn(
-                    'flex flex-col items-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-semibold transition',
-                  isActive ? 'bg-cyan-400/15 text-cyan-600' : 'text-[var(--app-muted)]',
+                    'relative flex flex-col items-center gap-1 overflow-hidden rounded-2xl px-2 py-2 text-[11px] font-semibold transition',
+                  isActive ? 'text-[var(--app-fg)]' : 'text-[var(--app-muted)]',
                 )
               }
             >
-              <Icon className="h-4 w-4" />
-              {label}
+              {({ isActive }) => (
+                <>
+                  {isActive ? <motion.span layoutId="nav-pill-mobile" className="absolute inset-0 rounded-2xl bg-cyan-400/15" transition={{ type: 'spring', stiffness: 500, damping: 40 }} /> : null}
+                  <Icon className="relative z-10 h-4 w-4" />
+                  <span className="relative z-10">{label}</span>
+                </>
+              )}
             </NavLink>
           ))}
         </div>

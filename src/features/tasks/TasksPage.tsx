@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { AnimatePresence, motion } from 'framer-motion'
-import { CalendarPlus, Filter, Plus, Trash2 } from 'lucide-react'
+import { CalendarPlus, CheckCircle2, Filter, Plus, Trash2 } from 'lucide-react'
 import { z } from 'zod'
 import { Badge, Button, Card, Input, Label, Modal, GhostButton } from '../../components/ui'
 import { deriveTaskStatus, filterTasks } from '../../lib/domain'
@@ -18,15 +18,32 @@ const taskSchema = z.object({
 
 type TaskForm = z.infer<typeof taskSchema>
 
+const formVariants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.06, delayChildren: 0.03 } },
+}
+
+const fieldVariants = {
+  hidden: { opacity: 0, y: 8 },
+  show: { opacity: 1, y: 0 },
+}
+
 export function TasksPage() {
   const tasks = useAppStore((state) => state.tasks)
   const addTask = useAppStore((state) => state.addTask)
   const toggleTask = useAppStore((state) => state.toggleTask)
   const deleteTask = useAppStore((state) => state.deleteTask)
   const [open, setOpen] = useState(false)
+  const [saved, setSaved] = useState(false)
   const [subject, setSubject] = useState('')
   const [priority, setPriority] = useState('')
   const [status, setStatus] = useState('')
+
+  useEffect(() => {
+    if (!saved) return
+    const timer = window.setTimeout(() => setSaved(false), 900)
+    return () => window.clearTimeout(timer)
+  }, [saved])
 
   const visibleTasks = useMemo(
     () => filterTasks(tasks.map((task) => ({ ...task, status: deriveTaskStatus(task) })), { subject, priority, status }),
@@ -46,7 +63,8 @@ export function TasksPage() {
   const onSubmit = handleSubmit(async (values) => {
     addTask(values)
     reset()
-    setOpen(false)
+    setSaved(true)
+    window.setTimeout(() => setOpen(false), 260)
   })
 
   return (
@@ -91,32 +109,41 @@ export function TasksPage() {
       </div>
 
       <Modal open={open} title="Add task" onClose={() => setOpen(false)}>
-        <form className="space-y-4" onSubmit={onSubmit}>
-          <div>
+        <motion.form className="space-y-4" onSubmit={onSubmit} initial="hidden" animate="show" variants={formVariants}>
+          <motion.div variants={fieldVariants}>
             <Label htmlFor="title">Title</Label>
             <Input id="title" {...register('title')} />
             {errors.title ? <p className="mt-1 text-xs text-rose-300">Title is required.</p> : null}
-          </div>
+          </motion.div>
           <div className="grid gap-4 md:grid-cols-2">
-            <div>
+            <motion.div variants={fieldVariants}>
               <Label htmlFor="subject">Subject</Label>
               <Input id="subject" {...register('subject')} />
-            </div>
-            <div>
+            </motion.div>
+            <motion.div variants={fieldVariants}>
               <Label htmlFor="dueDate">Due date</Label>
               <Input id="dueDate" type="text" inputMode="numeric" placeholder="YYYY-MM-DD" {...register('dueDate')} />
               <p className="mt-1 text-xs text-[var(--app-muted)]">Use the format YYYY-MM-DD.</p>
-            </div>
+            </motion.div>
           </div>
-          <div>
+          <motion.div variants={fieldVariants}>
             <Label htmlFor="priority">Priority</Label>
             <Input id="priority" {...register('priority')} />
-          </div>
-          <div className="flex justify-end gap-2">
+          </motion.div>
+          <motion.div variants={fieldVariants} className="flex items-center justify-between gap-2">
+            <motion.div
+              initial={false}
+              animate={saved ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.92 }}
+              className="flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-200"
+            >
+              <CheckCircle2 className="h-4 w-4" /> Saved
+            </motion.div>
+            <div className="flex gap-2">
             <GhostButton type="button" onClick={() => setOpen(false)}>Cancel</GhostButton>
-            <Button type="submit" disabled={isSubmitting}><CalendarPlus className="mr-2 h-4 w-4" />Save task</Button>
-          </div>
-        </form>
+              <Button type="submit" disabled={isSubmitting}><CalendarPlus className="mr-2 h-4 w-4" />Save task</Button>
+            </div>
+          </motion.div>
+        </motion.form>
       </Modal>
     </div>
   )

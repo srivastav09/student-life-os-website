@@ -1,4 +1,5 @@
 import { forwardRef, type ButtonHTMLAttributes, type HTMLAttributes, type InputHTMLAttributes, type LabelHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { cn } from '../lib/utils'
 
 export const Button = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement>>(
@@ -51,17 +52,46 @@ export function Badge(props: HTMLAttributes<HTMLSpanElement>) {
 }
 
 export function Modal({ open, title, onClose, children }: { open: boolean; title: string; onClose: () => void; children: ReactNode }) {
-  if (!open) return null
+  const reduced = useReducedMotion()
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/70 px-4 backdrop-blur-sm" role="dialog" aria-modal="true">
-      <div className="w-full max-w-xl rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-surface-strong)] p-5 shadow-2xl shadow-black/40">
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold text-[var(--app-fg)]">{title}</h2>
-          <GhostButton onClick={onClose} type="button">Close</GhostButton>
+    <AnimatePresence>
+      {open ? (
+        <div className="fixed inset-0 z-50 grid place-items-center px-4" role="dialog" aria-modal="true">
+          <motion.button
+            aria-label="Close dialog"
+            className="absolute inset-0 cursor-default bg-slate-950/70 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={onClose}
+            type="button"
+          />
+          <motion.div
+            initial={reduced ? { opacity: 1 } : { opacity: 0, y: 18, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={reduced ? { opacity: 1 } : { opacity: 0, y: 12, scale: 0.98 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+            className="relative w-full max-w-xl rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-surface-strong)] p-5 shadow-2xl shadow-black/40"
+          >
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <h2 className="text-lg font-semibold text-[var(--app-fg)]">{title}</h2>
+              <GhostButton onClick={onClose} type="button">Close</GhostButton>
+            </div>
+            <motion.div
+              initial={reduced ? false : 'hidden'}
+              animate="show"
+              variants={{
+                hidden: {},
+                show: { transition: { staggerChildren: 0.06, delayChildren: 0.04 } },
+              }}
+            >
+              {children}
+            </motion.div>
+          </motion.div>
         </div>
-        {children}
-      </div>
-    </div>
+      ) : null}
+    </AnimatePresence>
   )
 }

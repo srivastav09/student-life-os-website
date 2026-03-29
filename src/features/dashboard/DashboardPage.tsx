@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
+import { useState } from 'react'
 import dayjs from 'dayjs'
 import { ArrowRight, BookOpen, Brain, Clock3, Sparkles, Target, Wrench } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -26,6 +27,8 @@ const edges: StudyEdge[] = [
 ]
 
 function StudyGraph() {
+  const [activeNode, setActiveNode] = useState<string | null>(null)
+
   return (
     <Card className="relative overflow-hidden lg:col-span-2">
       <div className="mb-4 flex items-center justify-between">
@@ -41,6 +44,7 @@ function StudyGraph() {
             const from = nodes.find((node) => node.id === edge.from)
             const to = nodes.find((node) => node.id === edge.to)
             if (!from || !to) return null
+            const connected = !activeNode || edge.from === activeNode || edge.to === activeNode
             return (
               <motion.line
                 key={`${edge.from}-${edge.to}`}
@@ -48,11 +52,11 @@ function StudyGraph() {
                 y1={from.y}
                 x2={to.x}
                 y2={to.y}
-                stroke="rgba(103,232,249,0.45)"
-                strokeWidth="0.8"
+                stroke={connected ? 'rgba(103,232,249,0.7)' : 'rgba(148,163,184,0.18)'}
+                strokeWidth={connected ? '1.1' : '0.6'}
                 strokeDasharray="2 2"
                 initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: 1, opacity: 1 }}
+                animate={{ pathLength: 1, opacity: connected ? 1 : 0.5 }}
                 transition={{ duration: 1.2, delay: 0.1 }}
               />
             )
@@ -61,16 +65,25 @@ function StudyGraph() {
         {nodes.map((node, index) => (
           <motion.div
             key={node.id}
-            className="absolute -translate-x-1/2 -translate-y-1/2"
+            className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer"
             style={{ left: `${node.x}%`, top: `${node.y}%` }}
             initial={{ opacity: 0, scale: 0.6, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
+            animate={{ opacity: 1, scale: activeNode && activeNode !== node.id ? 0.95 : 1, y: 0 }}
             transition={{ delay: index * 0.12, type: 'spring', stiffness: 260, damping: 18 }}
+            onHoverStart={() => setActiveNode(node.id)}
+            onHoverEnd={() => setActiveNode(null)}
           >
             <div className={`rounded-full bg-gradient-to-br ${node.color} p-[1px] shadow-2xl shadow-cyan-500/20`}>
-              <div className="rounded-full bg-[var(--app-surface-strong)] px-4 py-3 text-center text-xs font-semibold text-[var(--app-fg)] backdrop-blur">
+              <motion.div
+                className="rounded-full bg-[var(--app-surface-strong)] px-4 py-3 text-center text-xs font-semibold text-[var(--app-fg)] backdrop-blur"
+                animate={{
+                  scale: activeNode && activeNode !== node.id ? 0.98 : 1,
+                  boxShadow: activeNode === node.id ? '0 0 0 1px rgba(34,211,238,0.35), 0 0 24px rgba(34,211,238,0.12)' : '0 0 0 0 rgba(0,0,0,0)',
+                }}
+                transition={{ duration: 0.22 }}
+              >
                 {node.label}
-              </div>
+              </motion.div>
             </div>
           </motion.div>
         ))}
