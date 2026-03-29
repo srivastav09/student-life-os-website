@@ -1,0 +1,414 @@
+# 🧾 Student Life OS — Product Requirements Document (PRD)
+
+## Version: v1.0
+
+## Type: Frontend-only Application
+
+## Target Users: Indian College Students
+
+---
+
+# 1. 🧠 PRODUCT OVERVIEW
+
+## 1.1 Vision
+
+Build an **offline-first, all-in-one student productivity system** that combines planning, studying, tracking, and focus tools into a single interface.
+
+Modern student tools like Notion and MyStudyLife succeed because they combine **tasks, notes, schedules, and tracking in one system** ([Graphic Era University][1])
+
+---
+
+## 1.2 Problem Statement
+
+Students in Indian colleges face:
+
+* Fragmented tools (notes, tasks, schedules in different apps)
+* Irregular timetables and exam schedules
+* Last-minute preparation patterns
+* High distraction environments
+* Poor tracking of productivity and study consistency
+
+---
+
+## 1.3 Goals
+
+```yaml
+primary_goals:
+  - unify_student_life_management
+  - improve_time_management
+  - increase_focus_and_consistency
+  - reduce_app_switching
+
+secondary_goals:
+  - offline_first
+  - fast_and_simple_ui
+  - mobile_responsive
+```
+
+---
+
+# 2. 👥 TARGET USERS
+
+```yaml
+primary_users:
+  - engineering_students
+  - degree_students
+  - competitive_exam_students
+
+india_context:
+  - semester_based_system
+  - internal_external_exams
+  - group_assignments
+  - inconsistent_class_schedules
+```
+
+---
+
+# 3. 🧩 PRODUCT PRINCIPLES
+
+```yaml
+principles:
+  - all_in_one_dashboard
+  - zero_backend_dependency
+  - instant_usage_no_login
+  - minimal_input_friction
+  - visual_feedback_system
+```
+
+---
+
+# 4. 🧱 FEATURE ARCHITECTURE
+
+```yaml
+modules:
+  - dashboard
+  - tasks_assignments
+  - timetable
+  - notes
+  - exams_tracker
+  - focus_mode
+  - habit_tracker
+  - analytics
+  - storage_engine
+```
+
+---
+
+# 5. 📦 FEATURE SPECIFICATIONS
+
+---
+
+## 5.1 🏠 Dashboard
+
+```yaml
+features:
+  - today_tasks
+  - upcoming_exams
+  - timetable_preview
+  - focus_timer_widget
+  - habit_summary
+  - quick_add_actions
+
+ux:
+  - card_based_layout
+  - minimal_scroll
+  - fast_access
+```
+
+---
+
+## 5.2 ✅ Tasks & Assignments
+
+```yaml
+features:
+  - create_task:
+      fields: [title, subject, due_date, priority]
+  - status: [pending, completed, overdue]
+  - filters: [subject, priority, date]
+  - recurring_tasks: true
+  - reminders: local_notifications
+
+india_specific:
+  - subject_based_grouping
+  - semester_tagging
+```
+
+---
+
+## 5.3 📅 Timetable Planner
+
+```yaml
+features:
+  - weekly_grid (mon-sat)
+  - add_class:
+      fields: [subject, faculty, time, room]
+  - highlight_current_class
+  - clash_detection
+```
+
+---
+
+## 5.4 📝 Notes Module
+
+```yaml
+features:
+  - markdown_support_basic
+  - subject_wise_notes
+  - quick_notes
+  - search_notes
+```
+
+---
+
+## 5.5 🎯 Exam Tracker
+
+```yaml
+features:
+  - add_exam:
+      fields: [subject, date, syllabus_status]
+  - countdown_timer
+  - preparation_status:
+      - not_started
+      - in_progress
+      - revised
+  - reminders
+```
+
+---
+
+## 5.6 ⏱️ Focus Mode
+
+Focus tools like Pomodoro improve concentration and reduce burnout ([Graphic Era University][1])
+
+```yaml
+features:
+  - pomodoro_timer:
+      presets: [25_5, custom]
+  - session_tracking
+  - distraction_counter
+  - focus_history
+```
+
+---
+
+## 5.7 🔁 Habit Tracker
+
+```yaml
+features:
+  - daily_habits
+  - streak_counter
+  - calendar_heatmap
+```
+
+---
+
+## 5.8 📊 Analytics
+
+Tracking behavior improves productivity and awareness ([EvePaper][2])
+
+```yaml
+features:
+  - study_time_tracking
+  - task_completion_rate
+  - focus_hours
+  - habit_consistency
+```
+
+---
+
+## 5.9 💾 Storage Engine
+
+```yaml
+storage:
+  type: localStorage
+  backup: JSON_export_import
+  offline: true
+```
+
+---
+
+# 6. 🧠 INTELLIGENCE LAYER (OPTIONAL)
+
+```yaml
+smart_features:
+  - suggest_study_schedule
+  - detect_overload_days
+  - auto_prioritize_tasks
+  - recommend_focus_sessions
+```
+
+---
+
+# 7. 🇮🇳 INDIA-SPECIFIC FEATURES
+
+```yaml
+india_features:
+  - semester_system_support
+  - internal_external_exam_tracking
+  - attendance_tracker (optional)
+  - festival_calendar_adjustments
+  - offline_usage_priority
+```
+
+---
+
+# 8. 🎨 UI / UX REQUIREMENTS
+
+```yaml
+ui:
+  - dark_mode_default
+  - mobile_first_design
+  - minimal_ui
+
+components:
+  - cards
+  - sidebar_navigation
+  - modals
+  - calendar_views
+```
+
+---
+
+# 9. 🧪 NON-FUNCTIONAL REQUIREMENTS
+
+```yaml
+performance:
+  - instant_load
+  - low_memory_usage
+
+security:
+  - data_stored_locally_only
+
+compatibility:
+  - mobile_browser_support
+  - desktop_support
+  - PWA_optional
+```
+
+---
+
+# 10. 📊 SUCCESS METRICS
+
+```yaml
+metrics:
+  - daily_active_usage
+  - tasks_completed
+  - focus_sessions
+  - weekly_retention
+```
+
+---
+
+# 11. 🚀 MVP SCOPE
+
+```yaml
+mvp_features:
+  - dashboard
+  - tasks
+  - timetable
+  - focus_timer
+  - localStorage
+
+exclude:
+  - analytics
+  - AI_features
+  - advanced_notes
+```
+
+---
+
+# 12. 🧱 TECH STACK
+
+```yaml
+frontend_core:
+  framework: React
+  language: TypeScript
+  bundler: Vite (preferred) | Next.js (optional)
+
+ui_system:
+  component_library: shadcn/ui
+  styling: Tailwind CSS
+  icons: lucide-react
+
+animation:
+  library: Framer Motion (motion.dev)
+  use_cases:
+    - page_transitions
+    - micro_interactions
+    - hover_effects
+    - modal_animations
+    - list_animations
+
+state_management:
+  primary: Zustand
+  fallback: React Context API
+
+forms_validation:
+  library: React Hook Form
+  validation: Zod
+
+storage:
+  primary: localStorage
+  advanced: IndexedDB (optional)
+
+charts:
+  library: Recharts
+
+date_time:
+  library: dayjs | date-fns
+
+routing:
+  library: react-router-dom
+
+utilities:
+  - lodash
+  - clsx
+  - tailwind-merge
+
+notifications:
+  library: sonner | react-hot-toast
+
+pwa:
+  optional: true
+```
+
+---
+
+# 13. 🗺️ FUTURE ROADMAP
+
+```yaml
+v2:
+  - cloud_sync
+  - authentication
+  - cross_device_sync
+
+v3:
+  - AI_study_assistant
+  - collaboration_features
+  - campus_integrations
+```
+
+---
+
+# 🏁 FINAL SUMMARY
+
+```yaml
+product: Student Life OS
+type: frontend_only_productivity_app
+
+core_modules:
+  - dashboard
+  - tasks
+  - timetable
+  - notes
+  - exams
+  - focus
+  - habits
+
+storage: localStorage
+
+target_users: indian_college_students
+
+value_proposition: all_in_one_student_productivity_system
+```
+
