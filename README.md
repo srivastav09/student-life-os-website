@@ -20,9 +20,10 @@ Frontend-only, offline-first student productivity app for tasks, timetable, and 
 
 This repo is configured as a project site.
 
-- Vite `base` is set for `/basic/`
+- Vite `base` is set to `./` for GitHub Pages project deployment
 - Deployment uses GitHub Actions from `.github/workflows/deploy.yml`
 - In GitHub, set `Settings > Pages > Source = GitHub Actions`
+- Release builds happen in GitHub Actions before deploy
 
 ## Notes
 
