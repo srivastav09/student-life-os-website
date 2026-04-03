@@ -1,4 +1,6 @@
 const STORAGE_KEY = 'student-life-os.website-state.v1'
+const AUTH_KEY = 'student-life-os.auth.v1'
+const API_BASE = ''
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const PERIODS = [
@@ -66,6 +68,7 @@ const defaultState = () => ({
     seconds: 0,
   },
   taskHistory: [],
+  aiHistory: [],
 })
 
 const app = document.getElementById('app')
@@ -358,6 +361,24 @@ app.innerHTML = `
         </div>
         <div id="taskHistoryList" class="history-list" aria-live="polite"></div>
       </section>
+
+      <section class="panel glass fade-up delay-9" id="aiPanel">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">AI coach</p>
+            <h2>Get a smart next step</h2>
+          </div>
+          <span class="pill">Backend AI or local fallback</span>
+        </div>
+        <div class="ai-box">
+          <textarea id="aiPrompt" placeholder="Ask for a study plan, task breakdown, or focus tip..."></textarea>
+          <div class="inline-actions">
+            <button type="button" class="primary-button" id="aiAskBtn">Ask AI</button>
+            <button type="button" class="ghost-button" id="aiClearBtn">Clear</button>
+          </div>
+          <div class="ai-result" id="aiResult">AI suggestions will appear here.</div>
+        </div>
+      </section>
     </section>
   </main>
 
@@ -423,6 +444,34 @@ app.innerHTML = `
       <button type="button" class="primary-button" id="exitFocusBtn">Exit focus mode</button>
     </div>
   </section>
+
+  <section class="auth-overlay" id="authOverlay">
+    <div class="auth-card glass">
+      <p class="eyebrow">Login system</p>
+      <h2>Sign in to sync your data</h2>
+      <p id="authInfo">Use the backend for login, database sync, and AI features. Offline mode is still available.</p>
+      <div class="auth-grid">
+        <label>
+          <span>Name</span>
+          <input id="authName" type="text" placeholder="Your name" />
+        </label>
+        <label>
+          <span>Email</span>
+          <input id="authEmail" type="email" placeholder="you@example.com" />
+        </label>
+        <label>
+          <span>Password</span>
+          <input id="authPassword" type="password" placeholder="••••••••" />
+        </label>
+      </div>
+      <div class="inline-actions">
+        <button type="button" class="primary-button" id="authLoginBtn">Login</button>
+        <button type="button" class="ghost-button" id="authRegisterBtn">Create account</button>
+        <button type="button" class="ghost-button" id="authOfflineBtn">Use offline</button>
+      </div>
+      <div class="auth-status" id="authStatus">Not signed in</div>
+    </div>
+  </section>
 `
 
 const focusExitBanner = document.createElement('button')
@@ -442,6 +491,7 @@ const els = {
   quoteAuthor: document.getElementById('quoteAuthor'),
   versionPill: document.getElementById('versionPill'),
   buildNote: document.getElementById('buildNote'),
+  authInfo: document.getElementById('authInfo'),
   newQuoteBtn: document.getElementById('newQuoteBtn'),
   focusBtn: document.getElementById('focusBtn'),
   themeBtn: document.getElementById('themeBtn'),
@@ -502,12 +552,26 @@ const els = {
   focusExitFloatingBtn: document.getElementById('focusExitFloatingBtn'),
   exitFocusBtn: document.getElementById('exitFocusBtn'),
   focusExitBanner,
+  aiPrompt: document.getElementById('aiPrompt'),
+  aiAskBtn: document.getElementById('aiAskBtn'),
+  aiClearBtn: document.getElementById('aiClearBtn'),
+  aiResult: document.getElementById('aiResult'),
+  authOverlay: document.getElementById('authOverlay'),
+  authName: document.getElementById('authName'),
+  authEmail: document.getElementById('authEmail'),
+  authPassword: document.getElementById('authPassword'),
+  authLoginBtn: document.getElementById('authLoginBtn'),
+  authRegisterBtn: document.getElementById('authRegisterBtn'),
+  authOfflineBtn: document.getElementById('authOfflineBtn'),
+  authStatus: document.getElementById('authStatus'),
 }
 
 let timerInterval = null
 let focusInterval = null
 let focusHistoryPushed = false
 let audioContext = null
+let auth = loadAuth()
+let apiAvailable = false
 
 registerActiveDay()
 syncTheme()
@@ -515,9 +579,11 @@ syncThemeSwitches()
 renderAll()
 forceCloseFocusMode()
 renderBuildStamp()
+renderAuthState()
 
 setupEvents()
 hideLoader()
+void bootstrapSession()
 
 function setupEvents() {
   els.newQuoteBtn.addEventListener('click', () => {
@@ -559,6 +625,16 @@ function setupEvents() {
   document.querySelectorAll('[data-focus-preset]').forEach((button) => {
     button.addEventListener('click', () => applyFocusPreset(Number(button.dataset.focusPreset)))
   })
+
+  els.aiAskBtn.addEventListener('click', askAI)
+  els.aiClearBtn.addEventListener('click', () => {
+    els.aiPrompt.value = ''
+    els.aiResult.textContent = 'AI suggestions will appear here.'
+  })
+
+  els.authLoginBtn.addEventListener('click', () => submitAuth('login'))
+  els.authRegisterBtn.addEventListener('click', () => submitAuth('register'))
+  els.authOfflineBtn.addEventListener('click', useOfflineMode)
 
   els.notesInput.addEventListener('input', handleNotesInput)
   els.resetBtn.addEventListener('click', resetAllData)
@@ -648,6 +724,7 @@ function normalizeState(input) {
     focusSettings: normalizeFocusSettings(input.focusSettings, input.focusSession?.duration),
     appearance: normalizeAppearance(input.appearance),
     taskHistory: Array.isArray(input.taskHistory) ? input.taskHistory.slice(0, 20).map(normalizeHistoryItem).filter(Boolean) : [],
+    aiHistory: Array.isArray(input.aiHistory) ? input.aiHistory : [],
     notes: String(input.notes ?? fallback.notes),
     theme: input.theme === 'light' ? 'light' : 'dark',
     soundEnabled: input.soundEnabled !== false,
@@ -657,8 +734,185 @@ function normalizeState(input) {
   }
 }
 
+function loadAuth() {
+  try {
+    const raw = localStorage.getItem(AUTH_KEY)
+    if (!raw) return { mode: 'guest', token: '', user: null }
+    return JSON.parse(raw)
+  } catch {
+    return { mode: 'guest', token: '', user: null }
+  }
+}
+
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  if (auth.mode === 'backend' && auth.token) {
+    void syncStateToServer().catch(() => {})
+  }
+}
+
+function saveAuth() {
+  localStorage.setItem(AUTH_KEY, JSON.stringify(auth))
+}
+
+function renderAuthState() {
+  els.authInfo.textContent = apiAvailable
+    ? 'Use the backend for login, database sync, and AI features. Offline mode is still available.'
+    : 'Backend is not reachable right now, so offline mode is the fastest way in.'
+
+  if (auth.mode === 'backend' && auth.user) {
+    els.authStatus.textContent = `Signed in as ${auth.user.name}`
+    els.authOverlay.hidden = true
+    els.focusBtn.disabled = false
+    return
+  }
+
+  els.authStatus.textContent = auth.mode === 'offline' ? 'Offline mode enabled' : 'Not signed in'
+  els.authOverlay.hidden = auth.mode === 'offline'
+}
+
+async function bootstrapSession() {
+  apiAvailable = await pingApi()
+  if (auth.mode !== 'backend' || !auth.token) {
+    renderAuthState()
+    return
+  }
+
+  try {
+    const me = await apiGet('/api/me', true)
+    if (me?.user) auth.user = me.user
+    const result = await apiGet('/api/state', true)
+    if (result?.state) {
+      Object.assign(state, normalizeState(result.state))
+      saveState()
+      renderAll()
+    }
+  } catch {
+    auth = { mode: 'offline', token: '', user: null }
+    saveAuth()
+  }
+
+  renderAuthState()
+}
+
+async function submitAuth(mode) {
+  const payload = {
+    name: els.authName.value.trim(),
+    email: els.authEmail.value.trim(),
+    password: els.authPassword.value,
+  }
+
+  if (!payload.email || !payload.password || (mode === 'register' && !payload.name)) {
+    showToast('Enter name, email, and password')
+    return
+  }
+
+  try {
+    const result = await apiPost(`/api/auth/${mode}`, payload)
+    auth = { mode: 'backend', token: result.token, user: result.user }
+    saveAuth()
+    if (result.state) {
+      Object.assign(state, normalizeState(result.state))
+      saveState()
+      renderAll()
+    }
+    renderAuthState()
+    showToast(mode === 'login' ? 'Logged in' : 'Account created')
+  } catch (error) {
+    showToast(error instanceof Error ? error.message : 'Authentication failed')
+  }
+}
+
+function useOfflineMode() {
+  auth = { mode: 'offline', token: '', user: null }
+  saveAuth()
+  renderAuthState()
+  showToast('Offline mode enabled')
+}
+
+async function syncStateToServer() {
+  if (auth.mode !== 'backend' || !auth.token) return
+  await apiPut('/api/state', { state })
+}
+
+async function askAI() {
+  const prompt = els.aiPrompt.value.trim()
+  if (!prompt) {
+    showToast('Write a prompt first')
+    return
+  }
+
+  els.aiResult.textContent = 'Thinking...'
+  try {
+    const result = await apiPost('/api/ai/suggest', { prompt, context: state })
+    els.aiResult.textContent = result.suggestion || 'No suggestion returned.'
+    pushTaskHistory('ai', 'AI coach', 'Generated a new suggestion')
+    saveState()
+  } catch {
+    els.aiResult.textContent = suggestLocally(prompt, state)
+  }
+}
+
+async function pingApi() {
+  try {
+    await fetch(`${API_BASE}/api/health`)
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function apiGet(pathname, authRequired = false) {
+  const response = await fetch(`${API_BASE}${pathname}`, {
+    headers: authRequired && auth.token ? { Authorization: `Bearer ${auth.token}` } : {},
+  })
+  if (!response.ok) throw new Error(await readError(response))
+  return response.json()
+}
+
+async function apiPost(pathname, body) {
+  const response = await fetch(`${API_BASE}${pathname}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(auth.token ? { Authorization: `Bearer ${auth.token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) throw new Error(await readError(response))
+  return response.json()
+}
+
+async function apiPut(pathname, body) {
+  const response = await fetch(`${API_BASE}${pathname}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(auth.token ? { Authorization: `Bearer ${auth.token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) throw new Error(await readError(response))
+  return response.json()
+}
+
+async function readError(response) {
+  try {
+    const body = await response.json()
+    return body.error || response.statusText
+  } catch {
+    return response.statusText
+  }
+}
+
+function suggestLocally(prompt, context) {
+  const text = String(prompt || '').toLowerCase()
+  const tasks = Array.isArray(context?.tasks) ? context.tasks : []
+  const openTasks = tasks.filter((task) => !task.completed).length
+  if (text.includes('plan')) return `You have ${openTasks} open tasks. Start with the smallest one, then run 25 minutes of focus.`
+  if (text.includes('study')) return 'Use one session for recall, one for practice, then one for review.'
+  if (text.includes('task')) return 'Pick one task, set a 25-minute timer, and stop after that one win.'
+  return 'Keep it simple: one goal, one timer, one next action.'
 }
 
 function renderAll() {

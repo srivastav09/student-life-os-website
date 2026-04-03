@@ -843,6 +843,20 @@ textarea {
   color: var(--muted);
 }
 
+.ai-box {
+  display: grid;
+  gap: 12px;
+}
+
+.ai-result {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(127, 145, 182, 0.08);
+  color: var(--text);
+  min-height: 72px;
+  line-height: 1.6;
+}
+
 .toggle-row {
   display: flex;
   align-items: center;
@@ -955,6 +969,50 @@ textarea {
   border-radius: 32px;
 }
 
+.auth-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(4, 8, 18, 0.72);
+  backdrop-filter: blur(10px);
+}
+
+.auth-overlay[hidden] {
+  display: none !important;
+}
+
+.auth-card {
+  width: min(640px, 100%);
+  padding: clamp(24px, 6vw, 40px);
+  border-radius: 32px;
+}
+
+.auth-card h2 {
+  margin: 8px 0 10px;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  letter-spacing: -0.05em;
+}
+
+.auth-grid {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.auth-grid label {
+  display: grid;
+  gap: 8px;
+}
+
+.auth-status {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
 .focus-meta {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1049,6 +1107,10 @@ textarea {
 
   .focus-meta {
     grid-template-columns: 1fr;
+  }
+
+  .auth-card {
+    padding-top: 56px;
   }
 }
 
