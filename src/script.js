@@ -60,11 +60,12 @@ const defaultState = () => ({
     remaining: 25 * 60,
     running: false,
   },
-    focusSettings: {
-      hours: 0,
-      minutes: 25,
-      seconds: 0,
-    },
+  focusSettings: {
+    hours: 0,
+    minutes: 25,
+    seconds: 0,
+  },
+  taskHistory: [],
 })
 
 const app = document.getElementById('app')
@@ -257,6 +258,35 @@ app.innerHTML = `
         </div>
 
         <div class="settings-list">
+          <div class="customize-grid focus-custom-grid">
+            <label>
+              <span>
+                <strong>Focus hours</strong>
+                <small>Set your deep work preset</small>
+              </span>
+              <input id="focusPresetHours" type="number" min="0" max="12" value="0" />
+            </label>
+            <label>
+              <span>
+                <strong>Focus minutes</strong>
+                <small>Default focus length</small>
+              </span>
+              <input id="focusPresetMinutes" type="number" min="0" max="59" value="25" />
+            </label>
+            <label>
+              <span>
+                <strong>Focus seconds</strong>
+                <small>Fine-tune the timer</small>
+              </span>
+              <input id="focusPresetSeconds" type="number" min="0" max="59" value="0" />
+            </label>
+          </div>
+
+          <div class="inline-actions">
+            <button type="button" class="primary-button" id="saveFocusPresetBtn">Save focus preset</button>
+            <button type="button" class="ghost-button" id="startFocusPresetBtn">Start preset</button>
+          </div>
+
           <div class="customize-grid">
             <label>
               <span>
@@ -314,6 +344,17 @@ app.innerHTML = `
 
           <button type="button" class="danger-button" id="resetBtn">Reset all data</button>
         </div>
+      </section>
+
+      <section class="panel glass fade-up delay-8" id="historyPanel">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">History</p>
+            <h2>Task activity log</h2>
+          </div>
+          <span class="pill">Recent changes</span>
+        </div>
+        <div id="taskHistoryList" class="history-list" aria-live="polite"></div>
       </section>
     </section>
   </main>
@@ -413,6 +454,7 @@ const els = {
   chartBars: document.getElementById('chartBars'),
   monthLabel: document.getElementById('monthLabel'),
   resetBtn: document.getElementById('resetBtn'),
+  taskHistoryList: document.getElementById('taskHistoryList'),
   toast: document.getElementById('toast'),
   focusOverlay: document.getElementById('focusOverlay'),
   focusOverlayText: document.getElementById('focusOverlayText'),
@@ -421,6 +463,11 @@ const els = {
   focusHours: document.getElementById('focusHours'),
   focusMinutes: document.getElementById('focusMinutes'),
   focusSeconds: document.getElementById('focusSeconds'),
+  focusPresetHours: document.getElementById('focusPresetHours'),
+  focusPresetMinutes: document.getElementById('focusPresetMinutes'),
+  focusPresetSeconds: document.getElementById('focusPresetSeconds'),
+  saveFocusPresetBtn: document.getElementById('saveFocusPresetBtn'),
+  startFocusPresetBtn: document.getElementById('startFocusPresetBtn'),
   focusStartBtn: document.getElementById('focusStartBtn'),
   focusPauseBtn: document.getElementById('focusPauseBtn'),
   focusCloseBtn: document.getElementById('focusCloseBtn'),
@@ -475,6 +522,11 @@ function setupEvents() {
   els.focusHours.addEventListener('input', syncFocusDurationFromInputs)
   els.focusMinutes.addEventListener('input', syncFocusDurationFromInputs)
   els.focusSeconds.addEventListener('input', syncFocusDurationFromInputs)
+  els.focusPresetHours.addEventListener('input', syncFocusPresetFromInputs)
+  els.focusPresetMinutes.addEventListener('input', syncFocusPresetFromInputs)
+  els.focusPresetSeconds.addEventListener('input', syncFocusPresetFromInputs)
+  els.saveFocusPresetBtn.addEventListener('click', saveFocusPreset)
+  els.startFocusPresetBtn.addEventListener('click', startSavedFocusPreset)
 
   els.notesInput.addEventListener('input', handleNotesInput)
   els.resetBtn.addEventListener('click', resetAllData)
@@ -563,6 +615,7 @@ function normalizeState(input) {
     },
     focusSettings: normalizeFocusSettings(input.focusSettings, input.focusSession?.duration),
     appearance: normalizeAppearance(input.appearance),
+    taskHistory: Array.isArray(input.taskHistory) ? input.taskHistory.slice(0, 20).map(normalizeHistoryItem).filter(Boolean) : [],
     notes: String(input.notes ?? fallback.notes),
     theme: input.theme === 'light' ? 'light' : 'dark',
     soundEnabled: input.soundEnabled !== false,
@@ -588,6 +641,7 @@ function renderAll() {
   renderCalendar()
   renderChart()
   renderFocusOverlay()
+  renderTaskHistory()
   saveState()
 }
 
@@ -791,8 +845,31 @@ function renderFocusOverlay() {
   els.focusOverlayTimer.textContent = formatHms(remaining)
   els.focusOverlayTasks.textContent = String(state.tasks.filter((task) => !task.completed).length)
   setFocusInputsFromSettings(state.focusSettings)
+  setFocusPresetInputsFromSettings(state.focusSettings)
   els.focusStartBtn.textContent = state.focusSession.running ? 'Restart focus' : 'Start focus'
   els.focusPauseBtn.textContent = state.focusSession.running ? 'Pause' : 'Reset'
+}
+
+function renderTaskHistory() {
+  const items = state.taskHistory.slice(0, 8)
+  if (!items.length) {
+    els.taskHistoryList.innerHTML = '<div class="empty-state">Task activity will appear here.</div>'
+    return
+  }
+
+  els.taskHistoryList.innerHTML = items
+    .map(
+      (entry) => `
+        <article class="history-item">
+          <div>
+            <strong>${escapeHtml(entry.title)}</strong>
+            <p>${escapeHtml(entry.detail)}</p>
+          </div>
+          <span>${formatRelativeTime(entry.at)}</span>
+        </article>
+      `,
+    )
+    .join('')
 }
 
 function handleTaskSubmit(event) {
@@ -806,8 +883,10 @@ function handleTaskSubmit(event) {
   if (taskId) {
     const task = state.tasks.find((item) => item.id === taskId)
     if (task) {
+      const before = task.title
       task.title = title
       task.category = category
+      pushTaskHistory('edited', title, `Edited from ${before}`)
     }
     showToast('Task updated')
   } else {
@@ -818,6 +897,7 @@ function handleTaskSubmit(event) {
       completed: false,
       createdAt: Date.now(),
     })
+    pushTaskHistory('created', title, `Added to ${category}`)
     showToast('Task added')
   }
 
@@ -841,9 +921,11 @@ function handleTaskListClick(event) {
     if (task.completed && !previous) {
       bumpDailyStat('completedTasks', 1)
       registerActiveDay()
+      pushTaskHistory('completed', task.title, 'Marked as complete')
       showToast('Task completed')
     } else if (!task.completed && previous) {
       bumpDailyStat('completedTasks', -1)
+      pushTaskHistory('reopened', task.title, 'Marked as incomplete')
     }
   }
 
@@ -857,6 +939,7 @@ function handleTaskListClick(event) {
   }
 
   if (action === 'delete') {
+    pushTaskHistory('deleted', task.title, 'Removed from task list')
     state.tasks = state.tasks.filter((item) => item.id !== id)
     showToast('Task deleted')
   }
@@ -1022,6 +1105,27 @@ function syncFocusDurationFromInputs() {
   renderFocusOverlay()
 }
 
+function syncFocusPresetFromInputs() {
+  state.focusSettings = readFocusPresetSettings()
+  saveState()
+  renderFocusOverlay()
+}
+
+function saveFocusPreset() {
+  const settings = readFocusPresetSettings()
+  state.focusSettings = settings
+  state.focusSession.duration = focusSettingsToSeconds(settings)
+  state.focusSession.remaining = state.focusSession.duration
+  saveState()
+  renderFocusOverlay()
+  showToast('Focus preset saved')
+}
+
+function startSavedFocusPreset() {
+  saveFocusPreset()
+  startFocusSession()
+}
+
 function startFocusSession() {
   const settings = readFocusSettings()
   const duration = focusSettingsToSeconds(settings)
@@ -1061,7 +1165,7 @@ function completeFocusSession() {
   state.focusSession.remaining = state.focusSession.duration
   bumpDailyStat('focusMinutes', Math.max(1, Math.ceil(state.focusSession.duration / 60)))
   bumpDailyStat('focusSessions', 1)
-  playTone(660)
+  playPeacefulAlarm()
   saveState()
   renderAll()
   showToast('Focus session complete')
@@ -1076,6 +1180,14 @@ function readFocusSettings() {
     hours: clampNumber(els.focusHours.value, 0, 12),
     minutes: clampNumber(els.focusMinutes.value, 0, 59),
     seconds: clampNumber(els.focusSeconds.value, 0, 59),
+  }
+}
+
+function readFocusPresetSettings() {
+  return {
+    hours: clampNumber(els.focusPresetHours.value, 0, 12),
+    minutes: clampNumber(els.focusPresetMinutes.value, 0, 59),
+    seconds: clampNumber(els.focusPresetSeconds.value, 0, 59),
   }
 }
 
@@ -1103,6 +1215,17 @@ function normalizeAppearance(appearance) {
   }
 }
 
+function normalizeHistoryItem(entry) {
+  if (!entry || typeof entry !== 'object') return null
+  return {
+    id: String(entry.id ?? crypto.randomUUID()),
+    action: String(entry.action ?? 'updated'),
+    title: String(entry.title ?? 'Task'),
+    detail: String(entry.detail ?? ''),
+    at: String(entry.at ?? new Date().toISOString()),
+  }
+}
+
 function secondsToFocusSettings(duration) {
   const safeDuration = Math.max(5, Number(duration) || 0)
   return {
@@ -1117,10 +1240,27 @@ function focusSettingsToSeconds(settings) {
   return Math.max(5, total)
 }
 
+function pushTaskHistory(action, title, detail) {
+  state.taskHistory.unshift({
+    id: crypto.randomUUID(),
+    action,
+    title,
+    detail,
+    at: new Date().toISOString(),
+  })
+  state.taskHistory = state.taskHistory.slice(0, 20)
+}
+
 function setFocusInputsFromSettings(settings) {
   els.focusHours.value = String(settings.hours)
   els.focusMinutes.value = String(settings.minutes)
   els.focusSeconds.value = String(settings.seconds)
+}
+
+function setFocusPresetInputsFromSettings(settings) {
+  els.focusPresetHours.value = String(settings.hours)
+  els.focusPresetMinutes.value = String(settings.minutes)
+  els.focusPresetSeconds.value = String(settings.seconds)
 }
 
 function resetAllData() {
@@ -1131,6 +1271,7 @@ function resetAllData() {
   timerInterval = null
   if (focusInterval) clearInterval(focusInterval)
   focusInterval = null
+  focusHistoryPushed = false
   syncTheme()
   syncThemeSwitches()
   saveState()
@@ -1246,6 +1387,14 @@ function formatHms(seconds) {
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
 }
 
+function formatRelativeTime(iso) {
+  const diff = Date.now() - new Date(iso).getTime()
+  const minutes = Math.max(1, Math.round(diff / 60000))
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.round(minutes / 60)
+  return `${hours}h ago`
+}
+
 function clampNumber(value, min, max) {
   const parsed = Number.parseInt(value, 10)
   if (!Number.isFinite(parsed)) return min
@@ -1282,6 +1431,31 @@ function playTone(frequency = 523) {
   gain.gain.exponentialRampToValueAtTime(0.08, audioContext.currentTime + 0.02)
   gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.3)
   oscillator.stop(audioContext.currentTime + 0.32)
+}
+
+function playPeacefulAlarm() {
+  if (!state.soundEnabled) return
+  const AudioCtx = window.AudioContext || window.webkitAudioContext
+  if (!AudioCtx) return
+
+  audioContext ??= new AudioCtx()
+  const start = audioContext.currentTime
+  const notes = [523.25, 659.25, 783.99, 659.25, 523.25]
+
+  notes.forEach((frequency, index) => {
+    const noteStart = start + index * 0.24
+    const oscillator = audioContext.createOscillator()
+    const gain = audioContext.createGain()
+    oscillator.type = 'sine'
+    oscillator.frequency.value = frequency
+    gain.gain.setValueAtTime(0.0001, noteStart)
+    gain.gain.exponentialRampToValueAtTime(0.06, noteStart + 0.04)
+    gain.gain.exponentialRampToValueAtTime(0.0001, noteStart + 0.22)
+    oscillator.connect(gain)
+    gain.connect(audioContext.destination)
+    oscillator.start(noteStart)
+    oscillator.stop(noteStart + 0.24)
+  })
 }
 
 function showToast(message) {
