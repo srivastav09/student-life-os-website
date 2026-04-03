@@ -137,6 +137,7 @@ textarea {
 
 button {
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 button:active {
@@ -879,7 +880,7 @@ textarea {
 
 .focus-exit-banner {
   position: fixed;
-  top: 14px;
+  bottom: 16px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 32;
@@ -897,6 +898,12 @@ textarea {
     top: 12px;
     right: 12px;
     padding: 14px 18px;
+  }
+
+  .focus-exit-banner {
+    bottom: 12px;
+    width: calc(100vw - 24px);
+    max-width: 320px;
   }
 
   .focus-card {

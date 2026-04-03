@@ -431,6 +431,7 @@ const els = {
 
 let timerInterval = null
 let focusInterval = null
+let focusHistoryPushed = false
 let audioContext = null
 
 registerActiveDay()
@@ -486,6 +487,10 @@ function setupEvents() {
 
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') exitFocusMode()
+  })
+
+  window.addEventListener('popstate', () => {
+    if (!els.focusOverlay.hidden) exitFocusMode()
   })
 
   els.focusOverlay.addEventListener('click', (event) => {
@@ -977,6 +982,10 @@ function enterFocusMode() {
   els.focusOverlay.hidden = false
   document.body.classList.add('focus-mode')
   els.focusExitBanner.hidden = false
+  if (!focusHistoryPushed) {
+    history.pushState({ focusMode: true }, '', location.href)
+    focusHistoryPushed = true
+  }
   renderFocusOverlay()
   showToast('Focus mode enabled')
 }
