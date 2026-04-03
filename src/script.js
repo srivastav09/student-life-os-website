@@ -68,8 +68,6 @@ const defaultState = () => ({
     autoBreak: true,
     quote: 'Breathe, focus, and finish one useful thing.',
   },
-  mood: 'focused',
-  energy: 72,
   focusSettings: {
     hours: 0,
     minutes: 25,
@@ -140,7 +138,7 @@ app.innerHTML = `
           <div class="workspace-orbital floating-card">
             <span class="eyebrow">Workspace</span>
             <strong>Adaptive student OS</strong>
-            <p>Time-aware, mood-aware, and command-driven.</p>
+            <p>Time-aware, fluid, and command-driven.</p>
           </div>
         </div>
       </section>
@@ -155,18 +153,24 @@ app.innerHTML = `
         <p id="adaptiveModeText">Your layout shifts toward planning, scheduling, and a lighter start.</p>
       </article>
 
-      <article class="os-card mood-card">
+      <article class="os-card momentum-card">
         <div class="os-card-header">
-          <span class="eyebrow">Energy & mood</span>
-          <strong id="moodLabel">Focused</strong>
+          <span class="eyebrow">Momentum</span>
+          <strong>Flow state</strong>
         </div>
-        <div class="mood-pills">
-          <button type="button" class="mood-pill" data-mood="calm">Calm</button>
-          <button type="button" class="mood-pill" data-mood="focused">Focused</button>
-          <button type="button" class="mood-pill" data-mood="stressed">Stressed</button>
-          <button type="button" class="mood-pill" data-mood="tired">Tired</button>
+        <div class="momentum-ring">
+          <div>
+            <span>Focus</span>
+            <strong id="momentumFocus">0 min</strong>
+          </div>
+          <div>
+            <span>Tasks</span>
+            <strong id="momentumTasks">0</strong>
+          </div>
         </div>
-        <input id="energySlider" type="range" min="0" max="100" value="72" />
+        <div class="momentum-wave" aria-hidden="true">
+          <span></span><span></span><span></span><span></span>
+        </div>
       </article>
 
       <article class="os-card timeline-card">
@@ -599,8 +603,8 @@ const els = {
   focusExitBanner,
   adaptiveModeLabel: document.getElementById('adaptiveModeLabel'),
   adaptiveModeText: document.getElementById('adaptiveModeText'),
-  moodLabel: document.getElementById('moodLabel'),
-  energySlider: document.getElementById('energySlider'),
+  momentumFocus: document.getElementById('momentumFocus'),
+  momentumTasks: document.getElementById('momentumTasks'),
   smartTimeline: document.getElementById('smartTimeline'),
   assistantTitle: document.getElementById('assistantTitle'),
   assistantText: document.getElementById('assistantText'),
@@ -655,10 +659,6 @@ function setupEvents() {
   els.focusAlarmSelect.addEventListener('change', updateFocusMode)
   els.focusAutoBreakSwitch.addEventListener('click', toggleAutoBreak)
   els.saveFocusQuoteBtn.addEventListener('click', saveFocusQuote)
-  els.energySlider.addEventListener('input', handleEnergyChange)
-  document.querySelectorAll('[data-mood]').forEach((button) => {
-    button.addEventListener('click', () => setMood(button.dataset.mood))
-  })
   els.assistantRefreshBtn.addEventListener('click', refreshAssistant)
   document.querySelectorAll('[data-dock]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -758,8 +758,6 @@ function normalizeState(input) {
     },
     focusMode: normalizeFocusMode(input.focusMode),
     focusSettings: normalizeFocusSettings(input.focusSettings, input.focusSession?.duration),
-    mood: ['calm', 'focused', 'stressed', 'tired'].includes(input.mood) ? input.mood : fallback.mood,
-    energy: Number.isFinite(input.energy) ? Math.min(100, Math.max(0, input.energy)) : fallback.energy,
     appearance: normalizeAppearance(input.appearance),
     taskHistory: Array.isArray(input.taskHistory) ? input.taskHistory.slice(0, 20).map(normalizeHistoryItem).filter(Boolean) : [],
     notes: String(input.notes ?? fallback.notes),
@@ -849,11 +847,8 @@ function renderAdaptiveShell() {
   const mode = getAdaptiveMode()
   els.adaptiveModeLabel.textContent = `${mode.label} mode`
   els.adaptiveModeText.textContent = mode.description
-  els.moodLabel.textContent = `${capitalize(state.mood)} · ${state.energy}% energy`
-  els.energySlider.value = String(state.energy)
-  document.querySelectorAll('[data-mood]').forEach((button) => {
-    button.dataset.active = String(button.dataset.mood === state.mood)
-  })
+  els.momentumFocus.textContent = `${getTodayStats().focusMinutes} min`
+  els.momentumTasks.textContent = String(state.tasks.filter((task) => !task.completed).length)
   renderSmartTimeline()
   renderAssistant()
 }
@@ -941,29 +936,10 @@ function getTimelineItems() {
 
 function getAssistantSuggestion() {
   const mode = getAdaptiveMode().label
-  const moodText = {
-    calm: 'Your calm state is ideal for steady review and planning.',
-    focused: 'You have focus momentum. Use it on the highest-value task.',
-    stressed: 'Keep it small. One task, one timer, one win.',
-    tired: 'Switch to lighter work and a shorter focus block.',
-  }
   return {
     title: `Suggested next step for ${mode.toLowerCase()} mode`,
-    text: moodText[state.mood] ?? 'Open your next task and start with a tiny first step.',
+    text: 'Open your next task and start with a tiny first step.',
   }
-}
-
-function setMood(mood) {
-  state.mood = mood
-  saveState()
-  renderAll()
-  showToast(`Mood set to ${mood}`)
-}
-
-function handleEnergyChange() {
-  state.energy = Number(els.energySlider.value)
-  saveState()
-  renderAdaptiveShell()
 }
 
 function refreshAssistant() {

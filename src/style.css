@@ -399,10 +399,38 @@ img {
 }
 
 .os-card {
+  position: relative;
   padding: 18px;
   border-radius: 22px;
   background: rgba(127, 145, 182, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  transform: translateZ(0);
+  animation: floatCard 14s ease-in-out infinite;
+  transition: transform 220ms ease, border-color 220ms ease, background 220ms ease, box-shadow 220ms ease;
+}
+
+.os-card::after {
+  content: '';
+  position: absolute;
+  inset: auto -30% -52% auto;
+  width: 60%;
+  height: 60%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.12), transparent 62%);
+  opacity: 0;
+  transform: rotate(18deg);
+  transition: opacity 220ms ease;
+  pointer-events: none;
+}
+
+.os-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(125, 165, 255, 0.22);
+  box-shadow: 0 28px 60px rgba(0, 0, 0, 0.28);
+}
+
+.os-card:hover::after {
+  opacity: 1;
 }
 
 .os-card-header {
@@ -411,14 +439,69 @@ img {
   margin-bottom: 10px;
 }
 
-.mood-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 10px;
+.momentum-card {
+  display: grid;
+  gap: 14px;
 }
 
-.mood-pill,
+.momentum-ring {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.momentum-ring > div {
+  position: relative;
+  padding: 14px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(127, 145, 182, 0.08), rgba(127, 145, 182, 0.04));
+  overflow: hidden;
+}
+
+.momentum-ring > div::before {
+  content: '';
+  position: absolute;
+  inset: auto auto -18px -12px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(125, 165, 255, 0.18), transparent 68%);
+  filter: blur(2px);
+  animation: pulseGlow 3.8s ease-in-out infinite;
+}
+
+.momentum-ring span {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.momentum-ring strong {
+  font-size: 1.2rem;
+  letter-spacing: -0.03em;
+}
+
+.momentum-wave {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+  min-height: 42px;
+}
+
+.momentum-wave span {
+  flex: 1;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--accent), var(--accent-2));
+  transform-origin: bottom;
+  animation: wavePulse 1.8s ease-in-out infinite;
+}
+
+.momentum-wave span:nth-child(1) { height: 14px; animation-delay: 0s; }
+.momentum-wave span:nth-child(2) { height: 24px; animation-delay: 0.12s; }
+.momentum-wave span:nth-child(3) { height: 36px; animation-delay: 0.24s; }
+.momentum-wave span:nth-child(4) { height: 18px; animation-delay: 0.36s; }
+
 .dock-item {
   border: 1px solid var(--border);
   background: rgba(127, 145, 182, 0.08);
@@ -427,13 +510,9 @@ img {
   transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
 }
 
-.mood-pill {
-  padding: 8px 12px;
-}
-
-.mood-pill[data-active='true'] {
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: #fff;
+.dock-item:hover {
+  background: rgba(127, 145, 182, 0.18);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.16);
 }
 
 .smart-timeline {
@@ -1371,6 +1450,10 @@ textarea {
   .focus-duration {
     grid-template-columns: 1fr;
   }
+
+  .momentum-ring {
+    grid-template-columns: 1fr;
+  }
 }
 
 .focus-close {
@@ -1430,7 +1513,8 @@ textarea {
 
 .fade-in,
 .fade-up {
-  animation: fadeUp 700ms ease both;
+  animation: fadeUp 760ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
 }
 
 .delay-1 {
@@ -1476,12 +1560,12 @@ textarea {
 @keyframes fadeUp {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(18px) scale(0.98);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -1542,6 +1626,32 @@ textarea {
 
   50% {
     transform: translateY(calc(var(--float-distance) * -0.25)) translateX(4px);
+  }
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    transform: scale(0.92);
+    opacity: 0.35;
+  }
+
+  50% {
+    transform: scale(1.08);
+    opacity: 0.9;
+  }
+}
+
+@keyframes wavePulse {
+  0%,
+  100% {
+    transform: scaleY(0.82);
+    filter: saturate(0.95);
+  }
+
+  50% {
+    transform: scaleY(1.12);
+    filter: saturate(1.2);
   }
 }
 
