@@ -18,14 +18,14 @@ const QUOTES = [
 
 const DEFAULT_TASKS = [
   {
-    id: makeId(),
+    id: crypto.randomUUID(),
     title: 'Review chemistry notes',
     category: 'Study',
     completed: false,
     createdAt: Date.now(),
   },
   {
-    id: makeId(),
+    id: crypto.randomUUID(),
     title: 'Submit assignment draft',
     category: 'Exams',
     completed: false,
@@ -34,10 +34,6 @@ const DEFAULT_TASKS = [
 ]
 
 const DEFAULT_TIMETABLE = Object.fromEntries(DAYS.map((day) => [day, ['', '', '', '']]))
-
-function makeId() {
-  return typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `id-${Math.random().toString(36).slice(2, 10)}`
-}
 
 const defaultState = () => ({
   theme: 'dark',
@@ -834,7 +830,7 @@ function normalizeState(input) {
     ...fallback,
     ...input,
     tasks: tasks.map((task) => ({
-      id: task.id ?? makeId(),
+      id: task.id ?? crypto.randomUUID(),
       title: String(task.title ?? '').trim(),
       category: ['Study', 'Personal', 'Exams'].includes(task.category) ? task.category : 'Study',
       completed: Boolean(task.completed),
@@ -1301,7 +1297,7 @@ function handleTaskSubmit(event) {
     showToast('Task updated')
   } else {
     state.tasks.unshift({
-      id: makeId(),
+      id: crypto.randomUUID(),
       title,
       category,
       completed: false,
@@ -1614,7 +1610,7 @@ function normalizeAppearance(appearance) {
 function normalizeHistoryItem(entry) {
   if (!entry || typeof entry !== 'object') return null
   return {
-    id: String(entry.id ?? makeId()),
+    id: String(entry.id ?? crypto.randomUUID()),
     action: String(entry.action ?? 'updated'),
     title: String(entry.title ?? 'Task'),
     detail: String(entry.detail ?? ''),
@@ -1638,7 +1634,7 @@ function focusSettingsToSeconds(settings) {
 
 function pushTaskHistory(action, title, detail) {
   state.taskHistory.unshift({
-    id: makeId(),
+    id: crypto.randomUUID(),
     action,
     title,
     detail,
@@ -1825,11 +1821,11 @@ function clampNumber(value, min, max) {
 
 function escapeHtml(value) {
   return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
 }
 
 function escapeAttr(value) {
