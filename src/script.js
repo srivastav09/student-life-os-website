@@ -429,20 +429,11 @@ app.innerHTML = `
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <div class="command-palette" id="commandPalette" hidden>
-    <div class="command-backdrop" id="commandBackdrop"></div>
-    <div class="command-panel glass">
-      <input id="commandInput" type="text" placeholder="Search commands, tasks, notes..." autocomplete="off" />
-      <div id="commandList" class="command-list"></div>
-    </div>
-  </div>
-
   <nav class="dock glass" aria-label="Quick actions">
     <button type="button" class="dock-item" data-dock="#tasksPanel">Tasks</button>
     <button type="button" class="dock-item" data-dock="#schedulePanel">Timeline</button>
     <button type="button" class="dock-item" data-dock="#timerPanel">Focus</button>
     <button type="button" class="dock-item" data-dock="#insightsPanel">Progress</button>
-    <button type="button" class="dock-item primary-dock" id="openCommandBtn">Cmd + K</button>
   </nav>
 
   <section class="focus-overlay" id="focusOverlay" hidden>
@@ -592,11 +583,6 @@ const els = {
   assistantTitle: document.getElementById('assistantTitle'),
   assistantText: document.getElementById('assistantText'),
   assistantRefreshBtn: document.getElementById('assistantRefreshBtn'),
-  commandPalette: document.getElementById('commandPalette'),
-  commandBackdrop: document.getElementById('commandBackdrop'),
-  commandInput: document.getElementById('commandInput'),
-  commandList: document.getElementById('commandList'),
-  openCommandBtn: document.getElementById('openCommandBtn'),
 }
 
 let timerInterval = null
@@ -610,7 +596,6 @@ syncThemeSwitches()
 renderAll()
 forceCloseFocusMode()
 renderBuildStamp()
-closeCommandPalette()
 
 setupEvents()
 hideLoader()
@@ -649,11 +634,6 @@ function setupEvents() {
     button.addEventListener('click', () => setMood(button.dataset.mood))
   })
   els.assistantRefreshBtn.addEventListener('click', refreshAssistant)
-  els.openCommandBtn.addEventListener('click', openCommandPalette)
-  els.commandBackdrop.addEventListener('click', closeCommandPalette)
-  els.commandInput.addEventListener('input', renderCommandPalette)
-  els.commandInput.addEventListener('keydown', handleCommandKeys)
-  document.addEventListener('keydown', handleGlobalKeys)
   document.querySelectorAll('[data-dock]').forEach((button) => {
     button.addEventListener('click', () => {
       const target = document.querySelector(button.dataset.dock)
@@ -853,7 +833,6 @@ function renderAdaptiveShell() {
   })
   renderSmartTimeline()
   renderAssistant()
-  renderCommandPalette()
 }
 
 function renderSmartTimeline() {
@@ -877,32 +856,6 @@ function renderAssistant() {
   const suggestion = getAssistantSuggestion()
   els.assistantTitle.textContent = suggestion.title
   els.assistantText.textContent = suggestion.text
-}
-
-function renderCommandPalette() {
-  if (els.commandPalette.hidden) return
-  const query = els.commandInput.value.trim().toLowerCase()
-  const actions = getCommands().filter((command) => {
-    if (!query) return true
-    return `${command.title} ${command.detail}`.toLowerCase().includes(query)
-  })
-
-  els.commandList.innerHTML = actions
-    .slice(0, 7)
-    .map(
-      (command, index) => `
-        <button type="button" class="command-item" data-command="${command.id}">
-          <span>${escapeHtml(command.title)}</span>
-          <small>${escapeHtml(command.detail)}</small>
-          <kbd>${index === 0 ? 'Enter' : 'Tab'}</kbd>
-        </button>
-      `,
-    )
-    .join('') || '<div class="empty-state">No matching command.</div>'
-
-  els.commandList.querySelectorAll('[data-command]').forEach((button) => {
-    button.addEventListener('click', () => executeCommand(button.dataset.command))
-  })
 }
 
 function updateAtmosphere() {
@@ -977,32 +930,6 @@ function getAssistantSuggestion() {
   }
 }
 
-function getCommands() {
-  return [
-    { id: 'tasks', title: 'Go to tasks', detail: 'Jump to the task manager' },
-    { id: 'focus', title: 'Start focus mode', detail: 'Open immersive focus' },
-    { id: 'timeline', title: 'Open smart timeline', detail: 'Scroll to now/next/later' },
-    { id: 'mood-calm', title: 'Set mood calm', detail: 'Shift the UI to calm' },
-    { id: 'mood-focused', title: 'Set mood focused', detail: 'Boost focus energy' },
-    { id: 'mood-stressed', title: 'Set mood stressed', detail: 'Reduce cognitive load' },
-    { id: 'mood-tired', title: 'Set mood tired', detail: 'Suggest lighter work' },
-    { id: 'theme', title: 'Toggle theme', detail: 'Switch dark or light' },
-    { id: 'quote', title: 'New quote', detail: 'Refresh the motivation card' },
-    { id: 'timer', title: 'Open focus timer', detail: 'Jump to the Pomodoro section' },
-  ]
-}
-
-function executeCommand(id) {
-  closeCommandPalette()
-  if (id === 'tasks') return document.querySelector('#tasksPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  if (id === 'focus') return enterFocusMode()
-  if (id === 'timeline') return document.querySelector('#adaptiveStrip')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  if (id === 'theme') return toggleTheme()
-  if (id === 'quote') return els.newQuoteBtn.click()
-  if (id === 'timer') return document.querySelector('#timerPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  if (id.startsWith('mood-')) return setMood(id.replace('mood-', ''))
-}
-
 function setMood(mood) {
   state.mood = mood
   saveState()
@@ -1019,36 +946,6 @@ function handleEnergyChange() {
 function refreshAssistant() {
   renderAssistant()
   showToast('Suggestion refreshed')
-}
-
-function openCommandPalette() {
-  els.commandPalette.hidden = false
-  els.commandInput.value = ''
-  renderCommandPalette()
-  window.requestAnimationFrame(() => els.commandInput.focus())
-}
-
-function closeCommandPalette() {
-  els.commandPalette.hidden = true
-}
-
-function handleCommandKeys(event) {
-  if (event.key === 'Escape') closeCommandPalette()
-  if (event.key === 'Enter') {
-    const first = els.commandList.querySelector('[data-command]')
-    if (first) executeCommand(first.dataset.command)
-  }
-}
-
-function handleGlobalKeys(event) {
-  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
-    event.preventDefault()
-    if (els.commandPalette.hidden) openCommandPalette()
-    else closeCommandPalette()
-  }
-  if (event.key === 'Escape' && !els.focusOverlay.hidden) {
-    exitFocusMode()
-  }
 }
 
 function handlePointerMove(event) {
