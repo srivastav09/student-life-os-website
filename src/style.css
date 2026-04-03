@@ -687,7 +687,7 @@ img {
 
 .task-form {
   display: grid;
-  grid-template-columns: 1.6fr 1fr auto;
+  grid-template-columns: 1.4fr 1fr 0.9fr auto;
   gap: 12px;
   align-items: end;
   margin-bottom: 18px;
@@ -823,6 +823,18 @@ textarea {
 
 .category.exams {
   color: #ffbb6c;
+}
+
+.category.priority.high {
+  color: #ff8f97;
+}
+
+.category.priority.medium {
+  color: #f7c56f;
+}
+
+.category.priority.low {
+  color: #8fd4ff;
 }
 
 .task-actions {

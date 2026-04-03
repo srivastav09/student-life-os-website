@@ -21,6 +21,7 @@ const DEFAULT_TASKS = [
     id: crypto.randomUUID(),
     title: 'Review chemistry notes',
     category: 'Study',
+    priority: 'high',
     completed: false,
     createdAt: Date.now(),
   },
@@ -28,6 +29,7 @@ const DEFAULT_TASKS = [
     id: crypto.randomUUID(),
     title: 'Submit assignment draft',
     category: 'Exams',
+    priority: 'medium',
     completed: false,
     createdAt: Date.now(),
   },
@@ -230,6 +232,14 @@ app.innerHTML = `
               <option>Study</option>
               <option>Personal</option>
               <option>Exams</option>
+            </select>
+          </label>
+          <label>
+            <span>Priority</span>
+            <select id="taskPriority">
+              <option value="high">High</option>
+              <option value="medium" selected>Medium</option>
+              <option value="low">Low</option>
             </select>
           </label>
           <div class="task-form-actions">
@@ -538,6 +548,7 @@ const els = {
   taskId: document.getElementById('taskId'),
   taskTitle: document.getElementById('taskTitle'),
   taskCategory: document.getElementById('taskCategory'),
+  taskPriority: document.getElementById('taskPriority'),
   taskSubmitBtn: document.getElementById('taskSubmitBtn'),
   taskCancelBtn: document.getElementById('taskCancelBtn'),
   taskList: document.getElementById('taskList'),
@@ -729,6 +740,7 @@ function normalizeState(input) {
       id: task.id ?? crypto.randomUUID(),
       title: String(task.title ?? '').trim(),
       category: ['Study', 'Personal', 'Exams'].includes(task.category) ? task.category : 'Study',
+      priority: ['high', 'medium', 'low'].includes(String(task.priority).toLowerCase()) ? String(task.priority).toLowerCase() : 'medium',
       completed: Boolean(task.completed),
       createdAt: Number(task.createdAt ?? Date.now()),
     })).filter((task) => task.title),
@@ -971,7 +983,11 @@ function capitalize(value) {
 }
 
 function renderTasks() {
-  const tasks = state.tasks
+  const priorityWeight = { high: 3, medium: 2, low: 1 }
+  const tasks = [...state.tasks].sort((a, b) => {
+    const diff = priorityWeight[b.priority] - priorityWeight[a.priority]
+    return diff || Number(b.createdAt) - Number(a.createdAt)
+  })
   els.taskCountPill.textContent = `${tasks.length} item${tasks.length === 1 ? '' : 's'}`
   els.taskList.innerHTML = tasks.length
     ? tasks
@@ -986,6 +1002,7 @@ function renderTasks() {
               </label>
               <div class="task-meta">
                 <span class="category ${task.category.toLowerCase()}">${task.category}</span>
+                <span class="category priority ${task.priority}">${capitalize(task.priority)}</span>
                 <div class="task-actions">
                   <button type="button" class="icon-button" data-action="edit" data-id="${task.id}">Edit</button>
                   <button type="button" class="icon-button danger" data-action="delete" data-id="${task.id}">Delete</button>
@@ -1168,6 +1185,7 @@ function handleTaskSubmit(event) {
   event.preventDefault()
   const title = els.taskTitle.value.trim()
   const category = els.taskCategory.value
+  const priority = els.taskPriority.value
 
   if (!title) return
 
@@ -1178,6 +1196,7 @@ function handleTaskSubmit(event) {
       const before = task.title
       task.title = title
       task.category = category
+      task.priority = priority
       pushTaskHistory('edited', title, `Edited from ${before}`)
     }
     showToast('Task updated')
@@ -1186,10 +1205,11 @@ function handleTaskSubmit(event) {
       id: crypto.randomUUID(),
       title,
       category,
+      priority,
       completed: false,
       createdAt: Date.now(),
     })
-    pushTaskHistory('created', title, `Added to ${category}`)
+    pushTaskHistory('created', title, `Added to ${category} (${priority})`)
     showToast('Task added')
   }
 
@@ -1225,6 +1245,7 @@ function handleTaskListClick(event) {
     els.taskId.value = task.id
     els.taskTitle.value = task.title
     els.taskCategory.value = task.category
+    els.taskPriority.value = task.priority ?? 'medium'
     els.taskSubmitBtn.textContent = 'Save task'
     els.taskTitle.focus()
     return
@@ -1249,6 +1270,7 @@ function handleNotesInput() {
 function clearTaskForm() {
   els.taskId.value = ''
   els.taskForm.reset()
+  els.taskPriority.value = 'medium'
   els.taskSubmitBtn.textContent = 'Add task'
   els.taskTitle.focus()
 }
