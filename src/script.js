@@ -84,6 +84,7 @@ app.innerHTML = `
       </div>
     </div>
     <div class="topbar-actions">
+      <span class="version-pill" id="versionPill">v1.0.0</span>
       <button type="button" class="ghost-button" id="newQuoteBtn">New quote</button>
       <button type="button" class="ghost-button" id="focusBtn">Focus mode</button>
       <button type="button" class="primary-button" id="themeBtn">Toggle theme</button>
@@ -96,6 +97,7 @@ app.innerHTML = `
         <p class="eyebrow">Daily overview</p>
         <h1 id="greeting">Good morning.</h1>
         <p id="heroSummary">Your dashboard loads study time, tasks, notes, and your weekly plan in one place.</p>
+        <p class="build-note" id="buildNote">Last updated: loading...</p>
         <div class="hero-actions">
           <button type="button" class="primary-button" data-scroll="#tasksPanel">Manage tasks</button>
           <button type="button" class="ghost-button" data-scroll="#schedulePanel">Open timetable</button>
@@ -416,6 +418,8 @@ const els = {
   heroSummary: document.getElementById('heroSummary'),
   quoteText: document.getElementById('quoteText'),
   quoteAuthor: document.getElementById('quoteAuthor'),
+  versionPill: document.getElementById('versionPill'),
+  buildNote: document.getElementById('buildNote'),
   newQuoteBtn: document.getElementById('newQuoteBtn'),
   focusBtn: document.getElementById('focusBtn'),
   themeBtn: document.getElementById('themeBtn'),
@@ -486,6 +490,7 @@ syncTheme()
 syncThemeSwitches()
 renderAll()
 forceCloseFocusMode()
+renderBuildStamp()
 
 setupEvents()
 hideLoader()
@@ -664,6 +669,15 @@ function renderMotivation() {
   const quote = QUOTES[state.quoteIndex % QUOTES.length]
   els.quoteText.textContent = quote.text
   els.quoteAuthor.textContent = quote.author
+}
+
+function renderBuildStamp() {
+  const updated = new Intl.DateTimeFormat('en-US', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date())
+  els.versionPill.textContent = 'v1.1.0'
+  els.buildNote.textContent = `Last updated: ${updated}`
 }
 
 function renderOverview() {

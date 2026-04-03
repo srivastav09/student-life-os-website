@@ -239,6 +239,17 @@ img {
   flex-wrap: wrap;
 }
 
+.version-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 999px;
+  background: rgba(127, 145, 182, 0.14);
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
 .page {
   display: grid;
   gap: var(--page-gap);
@@ -321,6 +332,12 @@ img {
 .focus-card p {
   margin: 0;
   line-height: 1.6;
+}
+
+.build-note {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.84rem;
 }
 
 .quote-card {
