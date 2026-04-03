@@ -54,6 +54,7 @@ const defaultState = () => ({
   stats: {},
   timer: {
     mode: 'work',
+    duration: 25 * 60,
     remaining: 25 * 60,
     running: false,
   },
@@ -271,15 +272,31 @@ app.innerHTML = `
           </div>
         </div>
 
+        <div class="focus-duration timer-duration">
+          <label>
+            <span>Hours</span>
+            <input id="timerHours" type="number" min="0" max="12" value="0" />
+          </label>
+          <label>
+            <span>Minutes</span>
+            <input id="timerMinutes" type="number" min="0" max="59" value="25" />
+          </label>
+          <label>
+            <span>Seconds</span>
+            <input id="timerSeconds" type="number" min="0" max="59" value="0" />
+          </label>
+        </div>
+
         <div class="timer-actions">
           <button type="button" class="primary-button" id="timerToggleBtn">Start</button>
+          <button type="button" class="ghost-button" id="timerApplyBtn">Set time</button>
           <button type="button" class="ghost-button" id="timerResetBtn">Reset</button>
         </div>
 
         <div class="mini-metrics">
           <div>
             <span>Work</span>
-            <strong>25 min</strong>
+            <strong id="timerSettingStat">25 min</strong>
           </div>
           <div>
             <span>Break</span>
@@ -572,9 +589,14 @@ const els = {
   timerRing: document.getElementById('timerRing'),
   timerValue: document.getElementById('timerValue'),
   timerLabel: document.getElementById('timerLabel'),
+  timerHours: document.getElementById('timerHours'),
+  timerMinutes: document.getElementById('timerMinutes'),
+  timerSeconds: document.getElementById('timerSeconds'),
+  timerApplyBtn: document.getElementById('timerApplyBtn'),
   timerToggleBtn: document.getElementById('timerToggleBtn'),
   timerResetBtn: document.getElementById('timerResetBtn'),
   timerTodayStat: document.getElementById('timerTodayStat'),
+  timerSettingStat: document.getElementById('timerSettingStat'),
   notesInput: document.getElementById('notesInput'),
   notesCount: document.getElementById('notesCount'),
   timetableGrid: document.getElementById('timetableGrid'),
@@ -653,6 +675,7 @@ function setupEvents() {
   els.taskList.addEventListener('click', handleTaskListClick)
 
   els.timerToggleBtn.addEventListener('click', toggleTimer)
+  els.timerApplyBtn.addEventListener('click', applyTimerDuration)
   els.timerResetBtn.addEventListener('click', () => resetTimer())
 
   els.focusStartBtn.addEventListener('click', startFocusSession)
@@ -754,7 +777,8 @@ function normalizeState(input) {
     stats: typeof input.stats === 'object' && input.stats ? input.stats : {},
     timer: {
       mode: input.timer?.mode === 'break' ? 'break' : 'work',
-      remaining: Number.isFinite(input.timer?.remaining) ? input.timer.remaining : 25 * 60,
+      duration: Number.isFinite(input.timer?.duration) ? Math.max(60, input.timer.duration) : 25 * 60,
+      remaining: Number.isFinite(input.timer?.remaining) ? input.timer.remaining : (Number.isFinite(input.timer?.duration) ? Math.max(60, input.timer.duration) : 25 * 60),
       running: Boolean(input.timer?.running),
     },
     focusSession: {
@@ -999,7 +1023,7 @@ function renderTasks() {
 }
 
 function renderTimer() {
-  const total = state.timer.mode === 'work' ? 25 * 60 : 5 * 60
+  const total = state.timer.mode === 'work' ? state.timer.duration : 5 * 60
   const remaining = Math.max(0, state.timer.remaining)
   const progress = 1 - remaining / total
   els.timerModePill.textContent = state.timer.mode === 'work' ? 'Work' : 'Break'
@@ -1008,6 +1032,8 @@ function renderTimer() {
   els.timerRing.style.setProperty('--progress', String(Math.max(0, Math.min(1, progress))))
   els.timerToggleBtn.textContent = state.timer.running ? 'Pause' : 'Start'
   els.timerRing.dataset.mode = state.timer.mode
+  els.timerSettingStat.textContent = formatHms(state.timer.duration)
+  syncTimerInputs()
 }
 
 function renderNotes() {
@@ -1015,6 +1041,36 @@ function renderNotes() {
     els.notesInput.value = state.notes
   }
   els.notesCount.textContent = `${state.notes.length} chars`
+}
+
+function syncTimerInputs() {
+  if (document.activeElement === els.timerHours || document.activeElement === els.timerMinutes || document.activeElement === els.timerSeconds) return
+  const hours = Math.floor(state.timer.duration / 3600)
+  const minutes = Math.floor((state.timer.duration % 3600) / 60)
+  const seconds = state.timer.duration % 60
+  els.timerHours.value = String(hours)
+  els.timerMinutes.value = String(minutes)
+  els.timerSeconds.value = String(seconds)
+}
+
+function readTimerDuration() {
+  const hours = clampNumber(els.timerHours.value, 0, 12)
+  const minutes = clampNumber(els.timerMinutes.value, 0, 59)
+  const seconds = clampNumber(els.timerSeconds.value, 0, 59)
+  return Math.max(60, hours * 3600 + minutes * 60 + seconds)
+}
+
+function applyTimerDuration() {
+  const duration = readTimerDuration()
+  state.timer.duration = duration
+  if (!state.timer.running) {
+    state.timer.remaining = duration
+  } else if (state.timer.mode === 'work') {
+    state.timer.remaining = duration
+  }
+  saveState()
+  renderTimer()
+  showToast(`Timer set to ${formatHms(duration)}`)
 }
 
 function renderTimetable() {
@@ -1302,6 +1358,9 @@ function toggleTimer() {
 
 function startTimer() {
   state.timer.running = true
+  if (state.timer.mode === 'work' && (!Number.isFinite(state.timer.remaining) || state.timer.remaining <= 0)) {
+    state.timer.remaining = state.timer.duration
+  }
   if (timerInterval) clearInterval(timerInterval)
   timerInterval = window.setInterval(tickTimer, 1000)
   showToast('Timer started')
@@ -1320,7 +1379,7 @@ function pauseTimer(silent = false) {
 
 function resetTimer(mode = 'work') {
   state.timer.mode = mode
-  state.timer.remaining = mode === 'work' ? 25 * 60 : 5 * 60
+  state.timer.remaining = mode === 'work' ? state.timer.duration : 5 * 60
   state.timer.running = false
   if (timerInterval) clearInterval(timerInterval)
   timerInterval = null
@@ -1344,7 +1403,7 @@ function completeTimerPhase() {
   pauseTimer(true)
 
   if (state.timer.mode === 'work') {
-    bumpDailyStat('focusMinutes', 25)
+    bumpDailyStat('focusMinutes', Math.max(1, Math.ceil(state.timer.duration / 60)))
     bumpDailyStat('focusSessions', 1)
     playTone()
     state.timer.mode = 'break'
@@ -1353,7 +1412,7 @@ function completeTimerPhase() {
   } else {
     playTone(660)
     state.timer.mode = 'work'
-    state.timer.remaining = 25 * 60
+    state.timer.remaining = state.timer.duration
     showToast('Break complete. Ready for another round.')
   }
 
