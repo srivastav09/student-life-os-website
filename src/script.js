@@ -64,6 +64,7 @@ const defaultState = () => ({
     theme: 'aurora',
     alarm: 'peaceful',
     autoBreak: true,
+    quote: 'Breathe, focus, and finish one useful thing.',
   },
   mood: 'focused',
   energy: 72,
@@ -421,6 +422,13 @@ app.innerHTML = `
       <span class="quote-label">Focus mode</span>
       <h2>Distraction-free session</h2>
       <p id="focusOverlayText">Everything you need is reduced to one calm view.</p>
+      <div class="focus-quote-block">
+        <label>
+          <span>Custom focus quote</span>
+          <textarea id="focusQuoteInput" rows="3" placeholder="Write a short focus line..."></textarea>
+        </label>
+        <button type="button" class="ghost-button" id="saveFocusQuoteBtn">Save quote</button>
+      </div>
       <p class="focus-note">Set the duration in Pomodoro, then tune the mode here.</p>
       <div class="focus-meta">
         <div>
@@ -567,6 +575,8 @@ const els = {
   focusThemeSelect: document.getElementById('focusThemeSelect'),
   focusAlarmSelect: document.getElementById('focusAlarmSelect'),
   focusAutoBreakSwitch: document.getElementById('focusAutoBreakSwitch'),
+  focusQuoteInput: document.getElementById('focusQuoteInput'),
+  saveFocusQuoteBtn: document.getElementById('saveFocusQuoteBtn'),
   focusHours: document.getElementById('focusHours'),
   focusMinutes: document.getElementById('focusMinutes'),
   focusSeconds: document.getElementById('focusSeconds'),
@@ -633,6 +643,7 @@ function setupEvents() {
   els.focusThemeSelect.addEventListener('change', updateFocusMode)
   els.focusAlarmSelect.addEventListener('change', updateFocusMode)
   els.focusAutoBreakSwitch.addEventListener('click', toggleAutoBreak)
+  els.saveFocusQuoteBtn.addEventListener('click', saveFocusQuote)
   els.energySlider.addEventListener('input', handleEnergyChange)
   document.querySelectorAll('[data-mood]').forEach((button) => {
     button.addEventListener('click', () => setMood(button.dataset.mood))
@@ -1115,7 +1126,7 @@ function renderChart() {
 }
 
 function renderFocusOverlay() {
-  els.focusOverlayText.textContent = QUOTES[state.quoteIndex % QUOTES.length].text
+  els.focusOverlayText.textContent = state.focusMode.quote || QUOTES[state.quoteIndex % QUOTES.length].text
   const remaining = state.focusSession.running ? state.focusSession.remaining : state.focusSession.duration
   els.focusOverlayTimer.textContent = formatHms(remaining)
   els.focusSessionLabel.textContent = formatHms(state.focusSession.duration)
@@ -1124,6 +1135,7 @@ function renderFocusOverlay() {
   els.focusThemeSelect.value = state.focusMode.theme
   els.focusAlarmSelect.value = state.focusMode.alarm
   els.focusAutoBreakSwitch.setAttribute('aria-pressed', String(state.focusMode.autoBreak))
+  els.focusQuoteInput.value = state.focusMode.quote || ''
   setFocusInputsFromSettings(state.focusSettings)
   els.focusStartBtn.textContent = state.focusSession.running ? 'Restart focus' : 'Start focus'
   els.focusPauseBtn.textContent = state.focusSession.running ? 'Pause' : 'Reset'
@@ -1547,6 +1559,7 @@ function normalizeFocusMode(value) {
     theme: allowedThemes.includes(value?.theme) ? value.theme : 'aurora',
     alarm: allowedAlarms.includes(value?.alarm) ? value.alarm : 'peaceful',
     autoBreak: value?.autoBreak !== false,
+    quote: String(value?.quote || 'Breathe, focus, and finish one useful thing.'),
   }
 }
 
@@ -1561,6 +1574,14 @@ function toggleAutoBreak() {
   state.focusMode.autoBreak = !state.focusMode.autoBreak
   saveState()
   renderFocusOverlay()
+}
+
+function saveFocusQuote() {
+  const quote = els.focusQuoteInput.value.trim()
+  state.focusMode.quote = quote || 'Breathe, focus, and finish one useful thing.'
+  saveState()
+  renderFocusOverlay()
+  showToast('Focus quote saved')
 }
 
 function registerActiveDay() {
