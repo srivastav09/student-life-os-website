@@ -46,9 +46,9 @@ const defaultState = () => ({
   },
   lastActiveDate: '',
   streak: 1,
-  tasks: cloneStateValue(DEFAULT_TASKS),
+  tasks: structuredClone(DEFAULT_TASKS),
   notes: 'Plan the day in one clear sentence, then start.',
-  timetable: cloneStateValue(DEFAULT_TIMETABLE),
+  timetable: structuredClone(DEFAULT_TIMETABLE),
   stats: {},
   timer: {
     mode: 'work',
@@ -79,10 +79,6 @@ const defaultState = () => ({
   taskHistory: [],
   aiHistory: [],
 })
-
-function cloneStateValue(value) {
-  return typeof structuredClone === 'function' ? structuredClone(value) : JSON.parse(JSON.stringify(value))
-}
 
 const app = document.getElementById('app')
 const loader = document.createElement('div')
@@ -867,11 +863,7 @@ function normalizeState(input) {
 }
 
 function saveState() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
-  } catch {
-    // Ignore storage failures so the app can still load.
-  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
 }
 
 function renderAll() {
