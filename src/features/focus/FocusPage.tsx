@@ -26,7 +26,7 @@ export function FocusPage() {
   }, [focus.isRunning, tickFocus])
 
   return (
-    <motion.div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 120, damping: 18 }}>
+    <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
       <Card className="space-y-5 overflow-hidden">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -35,7 +35,7 @@ export function FocusPage() {
           </div>
           <Badge>{focus.phase}</Badge>
         </div>
-        <motion.div animate={reduced ? { scale: 1 } : { scale: focus.isRunning ? [1, 1.015, 1] : 1 }} transition={{ duration: 1.6, repeat: focus.isRunning && !reduced ? Number.POSITIVE_INFINITY : 0, ease: 'easeInOut' }} className="grid place-items-center rounded-[2rem] border border-cyan-400/20 bg-[var(--app-surface-strong)] py-10 shadow-inner shadow-cyan-500/5">
+        <motion.div animate={reduced ? { scale: 1 } : { scale: focus.isRunning ? [1, 1.01, 1] : 1 }} transition={{ duration: 1.4, repeat: focus.isRunning && !reduced ? Number.POSITIVE_INFINITY : 0 }} className="grid place-items-center rounded-[2rem] border border-cyan-400/20 bg-[var(--app-surface-strong)] py-10 shadow-inner shadow-cyan-500/5">
           <div className="relative grid place-items-center">
             <svg className="h-48 w-48 -rotate-90" viewBox="0 0 128 128" aria-hidden="true">
               <circle cx="64" cy="64" r={radius} stroke="rgba(148,163,184,0.18)" strokeWidth="10" fill="none" />
@@ -50,7 +50,7 @@ export function FocusPage() {
                 strokeDasharray={circumference}
                 initial={false}
                 animate={{ strokeDashoffset: circumference * (1 - progress) }}
-                transition={{ type: 'spring', stiffness: 140, damping: 30 }}
+                transition={{ type: 'spring', stiffness: 120, damping: 28 }}
               />
             </svg>
             <div className="absolute grid place-items-center">
@@ -60,10 +60,10 @@ export function FocusPage() {
           </div>
         </motion.div>
         <motion.div className="flex flex-wrap gap-3" initial={false} animate={{ opacity: 1 }}>
-            <motion.div whileHover={{ y: -2, scale: 1.01 }} whileTap={{ scale: 0.98 }}><Button onClick={startFocus}><Play className="mr-2 h-4 w-4" />Start</Button></motion.div>
-            <motion.div whileHover={{ y: -2, scale: 1.01 }} whileTap={{ scale: 0.98 }}><GhostButton onClick={pauseFocus}><Pause className="mr-2 h-4 w-4" />Pause</GhostButton></motion.div>
-            <motion.div whileHover={{ y: -2, scale: 1.01 }} whileTap={{ scale: 0.98 }}><GhostButton onClick={resetFocus}><RotateCcw className="mr-2 h-4 w-4" />Reset</GhostButton></motion.div>
-            <motion.div whileHover={{ y: -2, scale: 1.01 }} whileTap={{ scale: 0.98 }}><GhostButton onClick={addDistraction}><Skull className="mr-2 h-4 w-4" />Add distraction</GhostButton></motion.div>
+            <Button onClick={startFocus}><Play className="mr-2 h-4 w-4" />Start</Button>
+            <GhostButton onClick={pauseFocus}><Pause className="mr-2 h-4 w-4" />Pause</GhostButton>
+            <GhostButton onClick={resetFocus}><RotateCcw className="mr-2 h-4 w-4" />Reset</GhostButton>
+            <GhostButton onClick={addDistraction}><Skull className="mr-2 h-4 w-4" />Add distraction</GhostButton>
           </motion.div>
       </Card>
 
@@ -71,8 +71,8 @@ export function FocusPage() {
         <Card>
           <div className="mb-4 flex items-center justify-between"><p className="text-sm text-[var(--app-muted)]">Preset</p><Flame className="h-5 w-5 text-orange-300" /></div>
           <div className="grid grid-cols-2 gap-3">
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}><GhostButton onClick={() => setFocusPreset(25, 5)}>25 / 5</GhostButton></motion.div>
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}><GhostButton onClick={() => setFocusPreset(50, 10)}>50 / 10</GhostButton></motion.div>
+            <GhostButton onClick={() => setFocusPreset(25, 5)}>25 / 5</GhostButton>
+            <GhostButton onClick={() => setFocusPreset(50, 10)}>50 / 10</GhostButton>
           </div>
         </Card>
         <Card className="space-y-3">
@@ -92,6 +92,6 @@ export function FocusPage() {
           </div>
         </Card>
       </div>
-    </motion.div>
+    </div>
   )
 }

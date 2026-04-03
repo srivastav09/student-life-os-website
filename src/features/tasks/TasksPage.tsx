@@ -28,11 +28,6 @@ const fieldVariants = {
   show: { opacity: 1, y: 0 },
 }
 
-const listVariants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.07, delayChildren: 0.05 } },
-}
-
 export function TasksPage() {
   const tasks = useAppStore((state) => state.tasks)
   const addTask = useAppStore((state) => state.addTask)
@@ -73,14 +68,14 @@ export function TasksPage() {
   })
 
   return (
-    <motion.div className="space-y-6" initial="hidden" animate="show" variants={listVariants}>
-      <motion.div whileHover={{ y: -3 }} transition={{ type: 'spring', stiffness: 120, damping: 18 }} className="flex flex-col gap-4 rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-surface)] p-5 shadow-2xl shadow-black/10 md:flex-row md:items-center md:justify-between">
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-surface)] p-5 shadow-2xl shadow-black/10 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-sm text-[var(--app-muted)]">Tasks & assignments</p>
           <h2 className="text-2xl font-semibold text-[var(--app-fg)]">Track work without friction</h2>
         </div>
-        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}><Button onClick={() => setOpen(true)}><Plus className="mr-2 h-4 w-4" />Add task</Button></motion.div>
-      </motion.div>
+        <Button onClick={() => setOpen(true)}><Plus className="mr-2 h-4 w-4" />Add task</Button>
+      </div>
 
       <Card className="space-y-4">
         <div className="flex items-center gap-2 text-sm text-[var(--app-fg)]"><Filter className="h-4 w-4" /> Filters</div>
@@ -94,7 +89,7 @@ export function TasksPage() {
       <div className="grid gap-3">
         <AnimatePresence>
           {visibleTasks.map((task) => (
-            <motion.article key={task.id} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} whileHover={{ y: -3, scale: 1.01 }} className="rounded-[1.75rem] border border-[var(--app-border)] bg-[var(--app-surface-strong)] p-5">
+            <motion.article key={task.id} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="rounded-[1.75rem] border border-[var(--app-border)] bg-[var(--app-surface-strong)] p-5">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                   <div className="flex items-center gap-2">
@@ -150,6 +145,6 @@ export function TasksPage() {
           </motion.div>
         </motion.form>
       </Modal>
-    </motion.div>
+    </div>
   )
 }

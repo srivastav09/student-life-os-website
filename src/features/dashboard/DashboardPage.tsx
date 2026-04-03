@@ -26,16 +26,6 @@ const edges: StudyEdge[] = [
   { from: 'plan', to: 'ship' },
 ]
 
-const pageVariants = {
-  hidden: { opacity: 0, y: 14 },
-  show: { opacity: 1, y: 0, transition: { staggerChildren: 0.08, delayChildren: 0.04 } },
-}
-
-const cardVariants = {
-  hidden: { opacity: 0, y: 18 },
-  show: { opacity: 1, y: 0 },
-}
-
 function StudyGraph() {
   const [activeNode, setActiveNode] = useState<string | null>(null)
 
@@ -48,11 +38,7 @@ function StudyGraph() {
         </div>
         <Brain className="h-5 w-5 text-cyan-300" />
       </div>
-      <motion.div
-        className="relative h-72 rounded-[2rem] border border-[var(--app-border)] bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.15),_transparent_40%),linear-gradient(180deg,var(--app-surface)_0%,transparent_100%)]"
-        animate={{ backgroundPosition: ['0% 0%', '100% 100%', '0% 0%'] }}
-        transition={{ duration: 14, repeat: Number.POSITIVE_INFINITY, ease: 'linear' }}
-      >
+      <div className="relative h-72 rounded-[2rem] border border-[var(--app-border)] bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.15),_transparent_40%),linear-gradient(180deg,var(--app-surface)_0%,transparent_100%)]">
         <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" aria-hidden="true">
           {edges.map((edge) => {
             const from = nodes.find((node) => node.id === edge.from)
@@ -82,8 +68,8 @@ function StudyGraph() {
             className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer"
             style={{ left: `${node.x}%`, top: `${node.y}%` }}
             initial={{ opacity: 0, scale: 0.6, y: 10 }}
-            animate={{ opacity: 1, scale: activeNode && activeNode !== node.id ? 0.96 : 1, y: 0 }}
-            transition={{ delay: index * 0.12, type: 'spring', stiffness: 220, damping: 16 }}
+            animate={{ opacity: 1, scale: activeNode && activeNode !== node.id ? 0.95 : 1, y: 0 }}
+            transition={{ delay: index * 0.12, type: 'spring', stiffness: 260, damping: 18 }}
             onHoverStart={() => setActiveNode(node.id)}
             onHoverEnd={() => setActiveNode(null)}
           >
@@ -101,14 +87,14 @@ function StudyGraph() {
             </div>
           </motion.div>
         ))}
-        <motion.div className="absolute left-1/2 top-1/2 -translate-x-1/2 rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] px-4 py-3 text-center shadow-2xl shadow-black/20" initial={{ scale: 0.9, opacity: 0.5 }} animate={{ scale: [0.98, 1.03, 0.98], opacity: 1 }} transition={{ duration: 5, repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut' }}>
+        <motion.div className="absolute left-1/2 top-1/2 -translate-x-1/2 rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-strong)] px-4 py-3 text-center shadow-2xl shadow-black/20" initial={{ scale: 0.9, opacity: 0.5 }} animate={{ scale: [0.98, 1, 0.98], opacity: 1 }} transition={{ duration: 4, repeat: Number.POSITIVE_INFINITY }}>
           <p className="text-xs uppercase tracking-[0.35em] text-[var(--app-muted)]">Student system</p>
           <div className="mt-2 flex items-center gap-2 text-sm font-semibold text-[var(--app-fg)]">
             <BookOpen className="h-4 w-4 text-cyan-300" /> Learn
             <Wrench className="h-4 w-4 text-amber-300" /> Build
           </div>
         </motion.div>
-      </motion.div>
+      </div>
     </Card>
   )
 }
@@ -123,12 +109,12 @@ export function DashboardPage() {
   const upcomingClass = classes.find((entry) => entry.day === today.format('ddd')) ?? classes[0]
 
   return (
-    <motion.div className="space-y-6" variants={pageVariants} initial="hidden" animate="show">
+    <div className="space-y-6">
       <section className="grid gap-4 lg:grid-cols-[1.4fr_0.9fr]">
         <motion.div
-          variants={cardVariants}
-          whileHover={{ y: -4 }}
-          transition={{ type: 'spring', stiffness: 120, damping: 18 }}
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
           className="overflow-hidden rounded-[2rem] border border-cyan-400/20 bg-[radial-gradient(circle_at_top_left,_var(--app-glow),_transparent_42%),linear-gradient(135deg,var(--app-surface-strong),var(--app-surface))] p-6 shadow-2xl shadow-cyan-500/10"
         >
           <Badge className="border-cyan-400/30 bg-cyan-400/10 text-cyan-700">Offline-first dashboard</Badge>
@@ -139,17 +125,12 @@ export function DashboardPage() {
             Built for Indian college routines with local storage, fast cards, and motion-rich interactions.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <motion.div whileHover={{ y: -2, scale: 1.01 }} whileTap={{ scale: 0.98 }}>
-              <Link to="/tasks"><GhostButton>Open tasks <ArrowRight className="ml-2 h-4 w-4" /></GhostButton></Link>
-            </motion.div>
-            <motion.div whileHover={{ y: -2, scale: 1.01 }} whileTap={{ scale: 0.98 }}>
-              <Link to="/focus"><GhostButton>Start focus</GhostButton></Link>
-            </motion.div>
+            <Link to="/tasks"><GhostButton>Open tasks <ArrowRight className="ml-2 h-4 w-4" /></GhostButton></Link>
+            <Link to="/focus"><GhostButton>Start focus</GhostButton></Link>
           </div>
         </motion.div>
 
         <div className="grid gap-4">
-          <motion.div variants={cardVariants} whileHover={{ y: -4 }} transition={{ type: 'spring', stiffness: 120, damping: 18 }}>
           <Card className="relative overflow-hidden">
             <Target className="mb-2 h-5 w-5 text-cyan-300" />
             <p className="text-sm text-[var(--app-muted)]">Next focus session</p>
@@ -158,15 +139,12 @@ export function DashboardPage() {
               {focus.phase === 'focus' ? 'Deep work' : 'Break'} mode with {focus.distractionCount} distractions logged.
             </p>
           </Card>
-          </motion.div>
-          <motion.div variants={cardVariants} whileHover={{ y: -4 }} transition={{ type: 'spring', stiffness: 120, damping: 18 }}>
           <Card>
             <Clock3 className="mb-2 h-5 w-5 text-violet-300" />
             <p className="text-sm text-[var(--app-muted)]">Today</p>
             <p className="mt-1 text-2xl font-semibold text-[var(--app-fg)]">{today.format('ddd, D MMM')}</p>
             <p className="mt-2 text-sm text-[var(--app-muted)]">{todayTasks.length} tasks in motion, {classes.length} classes scheduled.</p>
           </Card>
-          </motion.div>
         </div>
       </section>
 
@@ -186,11 +164,9 @@ export function DashboardPage() {
               {todayTasks.map((task) => (
                 <motion.div
                   key={task.id}
-                  variants={cardVariants}
-                  initial="hidden"
-                  animate="show"
-                  exit={{ opacity: 0, x: 14, scale: 0.98 }}
-                  whileHover={{ x: 4, scale: 1.01 }}
+                  initial={{ opacity: 0, x: -14 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 14 }}
                   className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4"
                 >
                   <div className="flex items-center justify-between gap-3">
@@ -205,7 +181,6 @@ export function DashboardPage() {
             </div>
           </AnimatePresence>
         </Card>
-        <motion.div variants={cardVariants} whileHover={{ y: -4 }} transition={{ type: 'spring', stiffness: 120, damping: 18 }}>
         <Card>
           <p className="text-sm text-[var(--app-muted)]">Upcoming class</p>
           {upcomingClass ? (
@@ -218,8 +193,7 @@ export function DashboardPage() {
             <p className="mt-2 text-sm text-[var(--app-muted)]">Add classes in timetable.</p>
           )}
         </Card>
-        </motion.div>
       </section>
-    </motion.div>
+    </div>
   )
 }

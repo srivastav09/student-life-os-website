@@ -66,9 +66,6 @@ const defaultState = () => ({
     autoBreak: true,
     quote: 'Breathe, focus, and finish one useful thing.',
   },
-  sidebarCollapsed: false,
-  fontScale: 1,
-  highContrast: false,
   mood: 'focused',
   energy: 72,
   focusSettings: {
@@ -95,32 +92,13 @@ app.innerHTML = `
         <span>Student dashboard website</span>
       </div>
     </div>
-    <div class="quick-actions" aria-label="Quick actions">
-      <button type="button" class="primary-button" id="quickAddTaskBtn">Add Task</button>
-      <button type="button" class="ghost-button" id="quickStartTimerBtn">Start Timer</button>
-      <button type="button" class="ghost-button" id="quickOpenTimetableBtn">Open Timetable</button>
-    </div>
     <div class="topbar-actions">
-      <button type="button" class="icon-button" id="notifBtn" aria-label="Notifications">🔔</button>
-      <button type="button" class="icon-button" id="profileBtn" aria-label="Profile">👤</button>
-      <button type="button" class="icon-button" id="themeBtn" aria-label="Toggle theme">🌙</button>
+      <span class="version-pill" id="versionPill">v1.0.0</span>
+      <button type="button" class="ghost-button" id="newQuoteBtn">New quote</button>
+      <button type="button" class="ghost-button" id="focusBtn">Focus mode</button>
+      <button type="button" class="primary-button" id="themeBtn">Toggle theme</button>
     </div>
   </header>
-
-  <div class="shell">
-    <aside class="sidebar glass" id="sidebar">
-      <button type="button" class="sidebar-toggle" id="sidebarToggleBtn" aria-label="Collapse sidebar">☰</button>
-      <nav class="sidebar-nav" aria-label="Main navigation">
-        <button type="button" class="sidebar-item" data-scroll="#tasksPanel">📋 <span>Tasks</span></button>
-        <button type="button" class="sidebar-item" data-scroll="#timerPanel">⏱ <span>Focus Mode</span></button>
-        <button type="button" class="sidebar-item" data-scroll="#schedulePanel">📅 <span>Timetable</span></button>
-        <button type="button" class="sidebar-item" data-scroll="#insightsPanel">📊 <span>Insights</span></button>
-        <button type="button" class="sidebar-item" data-scroll="#notesPanel">📝 <span>Notes</span></button>
-      </nav>
-      <div class="sidebar-footer">
-        <div class="version-pill" id="versionPill">v1.0.0</div>
-      </div>
-    </aside>
 
   <main class="page">
     <section class="hero-shell glass fade-up">
@@ -237,10 +215,7 @@ app.innerHTML = `
             <p class="eyebrow">Task manager</p>
             <h2>Stay on top of what matters</h2>
           </div>
-          <div class="task-kpi">
-            <div class="task-progress-ring" id="taskProgressRing"><strong id="taskProgressPct">0%</strong></div>
-            <span class="pill" id="taskCountPill">0 items</span>
-          </div>
+          <span class="pill" id="taskCountPill">0 items</span>
         </div>
 
         <form id="taskForm" class="task-form">
@@ -255,24 +230,6 @@ app.innerHTML = `
               <option>Study</option>
               <option>Personal</option>
               <option>Exams</option>
-              <option>Admin</option>
-            </select>
-          </label>
-          <label>
-            <span>Priority</span>
-            <select id="taskPriority">
-              <option value="High">High</option>
-              <option value="Medium" selected>Medium</option>
-              <option value="Low">Low</option>
-            </select>
-          </label>
-          <label>
-            <span>Recurring</span>
-            <select id="taskRecurrence">
-              <option value="none">None</option>
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
             </select>
           </label>
           <div class="task-form-actions">
@@ -350,13 +307,8 @@ app.innerHTML = `
             <p class="eyebrow">Insights</p>
             <h2>Calendar and progress</h2>
           </div>
-          <div class="insight-actions">
-            <span class="pill" id="monthLabel"></span>
-            <button type="button" class="ghost-button" id="exportCsvBtn">Export CSV</button>
-            <button type="button" class="ghost-button" id="exportPdfBtn">Export PDF</button>
-          </div>
+          <span class="pill" id="monthLabel"></span>
         </div>
-        <div class="weekly-summary" id="weeklySummary"></div>
         <div class="insights-grid">
           <div>
             <h3>Calendar</h3>
@@ -434,28 +386,6 @@ app.innerHTML = `
             <button type="button" class="switch" id="soundSwitch" aria-pressed="true" aria-label="Toggle sound effects"></button>
           </label>
 
-          <label class="toggle-row">
-            <span>
-              <strong>High contrast</strong>
-              <small>Improve readability and UI contrast</small>
-            </span>
-            <button type="button" class="switch" id="contrastSwitch" aria-pressed="false" aria-label="Toggle high contrast"></button>
-          </label>
-
-          <label class="toggle-row">
-            <span>
-              <strong>Font size</strong>
-              <small>Adjust text size for comfort</small>
-            </span>
-            <input id="fontScaleRange" type="range" min="0.9" max="1.3" step="0.05" value="1" />
-          </label>
-
-          <div class="sync-actions">
-            <button type="button" class="ghost-button" id="gcalBtn">Google Calendar Sync</button>
-            <button type="button" class="ghost-button" id="outlookBtn">Outlook Sync</button>
-            <button type="button" class="ghost-button" id="cloudBackupBtn">Cloud Backup</button>
-          </div>
-
           <button type="button" class="danger-button" id="resetBtn">Reset all data</button>
         </div>
       </section>
@@ -473,7 +403,6 @@ app.innerHTML = `
 
     </section>
   </main>
-</div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
@@ -578,18 +507,6 @@ app.innerHTML = `
       <button type="button" class="primary-button" id="exitFocusBtn">Exit focus mode</button>
     </div>
   </section>
-
-  <footer class="footer glass">
-    <div class="footer-group">
-      <button type="button" class="danger-button" id="resetBtnFooter">Reset Data</button>
-      <span class="privacy-note">All data stored locally.</span>
-    </div>
-    <div class="footer-links">
-      <a href="#" role="button">Help</a>
-      <a href="#" role="button">Feedback</a>
-      <a href="#" role="button">About</a>
-    </div>
-  </footer>
 `
 
 const focusExitBanner = document.createElement('button')
@@ -612,11 +529,6 @@ const els = {
   newQuoteBtn: document.getElementById('newQuoteBtn'),
   focusBtn: document.getElementById('focusBtn'),
   themeBtn: document.getElementById('themeBtn'),
-  quickAddTaskBtn: document.getElementById('quickAddTaskBtn'),
-  quickStartTimerBtn: document.getElementById('quickStartTimerBtn'),
-  quickOpenTimetableBtn: document.getElementById('quickOpenTimetableBtn'),
-  notifBtn: document.getElementById('notifBtn'),
-  profileBtn: document.getElementById('profileBtn'),
   themeSwitch: document.getElementById('themeSwitch'),
   soundSwitch: document.getElementById('soundSwitch'),
   accentSelect: document.getElementById('accentSelect'),
@@ -682,9 +594,6 @@ const els = {
   assistantTitle: document.getElementById('assistantTitle'),
   assistantText: document.getElementById('assistantText'),
   assistantRefreshBtn: document.getElementById('assistantRefreshBtn'),
-  sidebar: document.getElementById('sidebar'),
-  sidebarToggleBtn: document.getElementById('sidebarToggleBtn'),
-  resetBtnFooter: document.getElementById('resetBtnFooter'),
 }
 
 let timerInterval = null
@@ -709,13 +618,6 @@ function setupEvents() {
     renderMotivation()
     showToast('New quote loaded')
   })
-
-  els.quickAddTaskBtn.addEventListener('click', () => els.taskTitle.focus())
-  els.quickStartTimerBtn.addEventListener('click', toggleTimer)
-  els.quickOpenTimetableBtn.addEventListener('click', () => document.querySelector('#schedulePanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
-  els.sidebarToggleBtn.addEventListener('click', toggleSidebar)
-  els.notifBtn.addEventListener('click', () => notify('All data stays local to your browser.'))
-  els.profileBtn.addEventListener('click', () => notify('Student profile is local-first and private.'))
 
   els.focusBtn.addEventListener('click', enterFocusMode)
   els.exitFocusBtn.addEventListener('click', exitFocusMode)
@@ -763,7 +665,6 @@ function setupEvents() {
 
   els.notesInput.addEventListener('input', handleNotesInput)
   els.resetBtn.addEventListener('click', resetAllData)
-  els.resetBtnFooter.addEventListener('click', resetAllData)
 
   document.querySelectorAll('[data-scroll]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -845,9 +746,6 @@ function normalizeState(input) {
     },
     focusMode: normalizeFocusMode(input.focusMode),
     focusSettings: normalizeFocusSettings(input.focusSettings, input.focusSession?.duration),
-    sidebarCollapsed: Boolean(input.sidebarCollapsed),
-    fontScale: Number.isFinite(input.fontScale) ? Math.min(1.3, Math.max(0.9, input.fontScale)) : 1,
-    highContrast: Boolean(input.highContrast),
     mood: ['calm', 'focused', 'stressed', 'tired'].includes(input.mood) ? input.mood : fallback.mood,
     energy: Number.isFinite(input.energy) ? Math.min(100, Math.max(0, input.energy)) : fallback.energy,
     appearance: normalizeAppearance(input.appearance),
@@ -886,9 +784,6 @@ function renderAll() {
 function renderTheme() {
   els.body.classList.toggle('theme-light', state.theme === 'light')
   els.body.classList.toggle('theme-dark', state.theme === 'dark')
-  els.body.classList.toggle('high-contrast', state.highContrast)
-  els.body.style.setProperty('--font-scale', String(state.fontScale))
-  els.body.classList.toggle('sidebar-collapsed', state.sidebarCollapsed)
   els.body.dataset.accent = state.appearance.accent
   els.body.dataset.density = state.appearance.density
   els.body.dataset.liquid = state.appearance.liquid
