@@ -410,7 +410,10 @@ app.innerHTML = `
             <p class="eyebrow">History</p>
             <h2>Task activity log</h2>
           </div>
-          <span class="pill">Recent changes</span>
+          <div class="inline-actions">
+            <span class="pill">Recent changes</span>
+            <button type="button" class="ghost-button" id="clearTaskHistoryBtn">Clear history</button>
+          </div>
         </div>
         <div id="taskHistoryList" class="history-list" aria-live="polite"></div>
       </section>
@@ -580,6 +583,7 @@ const els = {
   monthLabel: document.getElementById('monthLabel'),
   resetBtn: document.getElementById('resetBtn'),
   taskHistoryList: document.getElementById('taskHistoryList'),
+  clearTaskHistoryBtn: document.getElementById('clearTaskHistoryBtn'),
   toast: document.getElementById('toast'),
   focusOverlay: document.getElementById('focusOverlay'),
   focusOverlayText: document.getElementById('focusOverlayText'),
@@ -613,6 +617,7 @@ const els = {
 
 let timerInterval = null
 let focusInterval = null
+let focusAlarmInterval = null
 let focusHistoryPushed = false
 let audioContext = null
 
@@ -675,6 +680,7 @@ function setupEvents() {
   })
 
   els.notesInput.addEventListener('input', handleNotesInput)
+  els.clearTaskHistoryBtn.addEventListener('click', clearTaskHistory)
   els.resetBtn.addEventListener('click', resetAllData)
 
   document.querySelectorAll('[data-scroll]').forEach((button) => {
@@ -1369,11 +1375,13 @@ function enterFocusMode() {
 }
 
 function exitFocusMode() {
+  stopFocusAlarmLoop()
   pauseFocusSession(true)
   forceCloseFocusMode()
 }
 
 function forceCloseFocusMode(silent = false) {
+  stopFocusAlarmLoop()
   els.focusOverlay.hidden = true
   document.body.classList.remove('focus-mode')
   els.focusExitBanner.hidden = true
@@ -1381,6 +1389,19 @@ function forceCloseFocusMode(silent = false) {
     history.replaceState({}, '', location.href)
     focusHistoryPushed = false
   }
+}
+
+function startFocusAlarmLoop() {
+  if (focusAlarmInterval || !state.soundEnabled || state.focusMode.alarm === 'silent') return
+  focusAlarmInterval = window.setInterval(() => {
+    if (!els.focusOverlay.hidden) playFocusAlarm()
+  }, 1800)
+}
+
+function stopFocusAlarmLoop() {
+  if (!focusAlarmInterval) return
+  window.clearInterval(focusAlarmInterval)
+  focusAlarmInterval = null
 }
 
 function syncFocusDurationFromInputs() {
@@ -1406,6 +1427,7 @@ function applyFocusPreset(totalSeconds) {
 }
 
 function startFocusSession() {
+  stopFocusAlarmLoop()
   const settings = readFocusSettings()
   const duration = focusSettingsToSeconds(settings)
   state.focusSettings = settings
@@ -1445,6 +1467,7 @@ function completeFocusSession() {
   bumpDailyStat('focusMinutes', Math.max(1, Math.ceil(state.focusSession.duration / 60)))
   bumpDailyStat('focusSessions', 1)
   playFocusAlarm()
+  startFocusAlarmLoop()
   if (!state.focusMode.autoBreak) {
     renderFocusOverlay()
     showToast('Focus session complete')
@@ -1527,6 +1550,14 @@ function pushTaskHistory(action, title, detail) {
   state.taskHistory = state.taskHistory.slice(0, 20)
 }
 
+function clearTaskHistory() {
+  if (!confirm('Clear the task activity log?')) return
+  state.taskHistory = []
+  saveState()
+  renderTaskHistory()
+  showToast('Task history cleared')
+}
+
 function setFocusInputsFromSettings(settings) {
   els.focusHours.value = String(settings.hours)
   els.focusMinutes.value = String(settings.minutes)
@@ -1541,6 +1572,7 @@ function resetAllData() {
   timerInterval = null
   if (focusInterval) clearInterval(focusInterval)
   focusInterval = null
+  stopFocusAlarmLoop()
   focusHistoryPushed = false
   syncTheme()
   syncThemeSwitches()
