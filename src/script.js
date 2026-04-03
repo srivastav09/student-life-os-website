@@ -438,6 +438,7 @@ registerActiveDay()
 syncTheme()
 syncThemeSwitches()
 renderAll()
+forceCloseFocusMode()
 
 setupEvents()
 hideLoader()
@@ -491,6 +492,10 @@ function setupEvents() {
 
   window.addEventListener('popstate', () => {
     if (!els.focusOverlay.hidden) exitFocusMode()
+  })
+
+  window.addEventListener('pageshow', () => {
+    forceCloseFocusMode(true)
   })
 
   els.focusOverlay.addEventListener('click', (event) => {
@@ -992,9 +997,17 @@ function enterFocusMode() {
 
 function exitFocusMode() {
   pauseFocusSession(true)
+  forceCloseFocusMode()
+}
+
+function forceCloseFocusMode(silent = false) {
   els.focusOverlay.hidden = true
   document.body.classList.remove('focus-mode')
   els.focusExitBanner.hidden = true
+  if (!silent && history.state?.focusMode) {
+    history.replaceState({}, '', location.href)
+    focusHistoryPushed = false
+  }
 }
 
 function syncFocusDurationFromInputs() {
