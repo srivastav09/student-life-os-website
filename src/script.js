@@ -1,6 +1,4 @@
 const STORAGE_KEY = 'student-life-os.website-state.v1'
-const AUTH_KEY = 'student-life-os.auth.v1'
-const API_BASE = ''
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const PERIODS = [
@@ -62,6 +60,8 @@ const defaultState = () => ({
     remaining: 25 * 60,
     running: false,
   },
+  mood: 'focused',
+  energy: 72,
   focusSettings: {
     hours: 0,
     minutes: 25,
@@ -95,26 +95,88 @@ app.innerHTML = `
   </header>
 
   <main class="page">
-    <section class="hero glass fade-up">
-      <div class="hero-copy">
-        <p class="eyebrow">Daily overview</p>
-        <h1 id="greeting">Good morning.</h1>
-        <p id="heroSummary">Your dashboard loads study time, tasks, notes, and your weekly plan in one place.</p>
-        <p class="build-note" id="buildNote">Last updated: loading...</p>
-        <div class="hero-actions">
+    <section class="hero-shell glass fade-up">
+      <aside class="hero-sidebar">
+        <div class="brand-stack">
+          <div class="brand-mark large">S</div>
+          <div>
+            <p>Student Life OS</p>
+            <span>VisionOS-inspired student companion</span>
+          </div>
+        </div>
+
+        <div class="hero-sidebar-card">
+          <p class="eyebrow">Daily overview</p>
+          <h1 id="greeting">Good morning.</h1>
+          <p id="heroSummary">Your dashboard loads study time, tasks, notes, and your weekly plan in one place.</p>
+          <p class="build-note" id="buildNote">Last updated: loading...</p>
+        </div>
+
+        <div class="hero-sidebar-card hero-actions-stack">
           <button type="button" class="primary-button" data-scroll="#tasksPanel">Manage tasks</button>
           <button type="button" class="ghost-button" data-scroll="#schedulePanel">Open timetable</button>
+          <button type="button" class="ghost-button" id="focusBtn">Focus mode</button>
         </div>
-      </div>
-      <div class="hero-visual">
-        <div class="liquid-orb orb-a"></div>
-        <div class="liquid-orb orb-b"></div>
-        <div class="quote-card surface">
+
+        <div class="quote-card surface floating-card">
           <span class="quote-label">Motivation</span>
           <p id="quoteText">Small progress is still progress.</p>
           <small id="quoteAuthor">Student Life OS</small>
         </div>
-      </div>
+      </aside>
+
+      <section class="hero-workspace">
+        <div class="hero-visual">
+          <div class="liquid-orb orb-a"></div>
+          <div class="liquid-orb orb-b"></div>
+          <div class="workspace-orbital floating-card">
+            <span class="eyebrow">Workspace</span>
+            <strong>Adaptive student OS</strong>
+            <p>Time-aware, mood-aware, and command-driven.</p>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <section class="os-strip glass fade-up delay-1" id="adaptiveStrip">
+      <article class="os-card atmosphere-card">
+        <div class="os-card-header">
+          <span class="eyebrow">Adaptive OS</span>
+          <strong id="adaptiveModeLabel">Morning mode</strong>
+        </div>
+        <p id="adaptiveModeText">Your layout shifts toward planning, scheduling, and a lighter start.</p>
+      </article>
+
+      <article class="os-card mood-card">
+        <div class="os-card-header">
+          <span class="eyebrow">Energy & mood</span>
+          <strong id="moodLabel">Focused</strong>
+        </div>
+        <div class="mood-pills">
+          <button type="button" class="mood-pill" data-mood="calm">Calm</button>
+          <button type="button" class="mood-pill" data-mood="focused">Focused</button>
+          <button type="button" class="mood-pill" data-mood="stressed">Stressed</button>
+          <button type="button" class="mood-pill" data-mood="tired">Tired</button>
+        </div>
+        <input id="energySlider" type="range" min="0" max="100" value="72" />
+      </article>
+
+      <article class="os-card timeline-card">
+        <div class="os-card-header">
+          <span class="eyebrow">Smart timeline</span>
+          <strong>Now / Next / Later</strong>
+        </div>
+        <div id="smartTimeline" class="smart-timeline"></div>
+      </article>
+
+      <article class="os-card assistant-card">
+        <div class="os-card-header">
+          <span class="eyebrow">Digital assistant</span>
+          <strong id="assistantTitle">Suggested next step</strong>
+        </div>
+        <p id="assistantText">You usually get momentum after a small study win. Start with one short task.</p>
+        <button type="button" class="ghost-button dock-button" id="assistantRefreshBtn">Refresh suggestion</button>
+      </article>
     </section>
 
     <section class="stats-grid fade-up delay-1">
@@ -362,27 +424,26 @@ app.innerHTML = `
         <div id="taskHistoryList" class="history-list" aria-live="polite"></div>
       </section>
 
-      <section class="panel glass fade-up delay-9" id="aiPanel">
-        <div class="panel-header">
-          <div>
-            <p class="eyebrow">AI coach</p>
-            <h2>Get a smart next step</h2>
-          </div>
-          <span class="pill">Backend AI or local fallback</span>
-        </div>
-        <div class="ai-box">
-          <textarea id="aiPrompt" placeholder="Ask for a study plan, task breakdown, or focus tip..."></textarea>
-          <div class="inline-actions">
-            <button type="button" class="primary-button" id="aiAskBtn">Ask AI</button>
-            <button type="button" class="ghost-button" id="aiClearBtn">Clear</button>
-          </div>
-          <div class="ai-result" id="aiResult">AI suggestions will appear here.</div>
-        </div>
-      </section>
     </section>
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <div class="command-palette" id="commandPalette" hidden>
+    <div class="command-backdrop" id="commandBackdrop"></div>
+    <div class="command-panel glass">
+      <input id="commandInput" type="text" placeholder="Search commands, tasks, notes..." autocomplete="off" />
+      <div id="commandList" class="command-list"></div>
+    </div>
+  </div>
+
+  <nav class="dock glass" aria-label="Quick actions">
+    <button type="button" class="dock-item" data-dock="#tasksPanel">Tasks</button>
+    <button type="button" class="dock-item" data-dock="#schedulePanel">Timeline</button>
+    <button type="button" class="dock-item" data-dock="#timerPanel">Focus</button>
+    <button type="button" class="dock-item" data-dock="#insightsPanel">Progress</button>
+    <button type="button" class="dock-item primary-dock" id="openCommandBtn">Cmd + K</button>
+  </nav>
 
   <section class="focus-overlay" id="focusOverlay" hidden>
     <div class="focus-glow focus-glow-a"></div>
@@ -444,34 +505,6 @@ app.innerHTML = `
       <button type="button" class="primary-button" id="exitFocusBtn">Exit focus mode</button>
     </div>
   </section>
-
-  <section class="auth-overlay" id="authOverlay">
-    <div class="auth-card glass">
-      <p class="eyebrow">Login system</p>
-      <h2>Sign in to sync your data</h2>
-      <p id="authInfo">Use the backend for login, database sync, and AI features. Offline mode is still available.</p>
-      <div class="auth-grid">
-        <label>
-          <span>Name</span>
-          <input id="authName" type="text" placeholder="Your name" />
-        </label>
-        <label>
-          <span>Email</span>
-          <input id="authEmail" type="email" placeholder="you@example.com" />
-        </label>
-        <label>
-          <span>Password</span>
-          <input id="authPassword" type="password" placeholder="••••••••" />
-        </label>
-      </div>
-      <div class="inline-actions">
-        <button type="button" class="primary-button" id="authLoginBtn">Login</button>
-        <button type="button" class="ghost-button" id="authRegisterBtn">Create account</button>
-        <button type="button" class="ghost-button" id="authOfflineBtn">Use offline</button>
-      </div>
-      <div class="auth-status" id="authStatus">Not signed in</div>
-    </div>
-  </section>
 `
 
 const focusExitBanner = document.createElement('button')
@@ -491,7 +524,6 @@ const els = {
   quoteAuthor: document.getElementById('quoteAuthor'),
   versionPill: document.getElementById('versionPill'),
   buildNote: document.getElementById('buildNote'),
-  authInfo: document.getElementById('authInfo'),
   newQuoteBtn: document.getElementById('newQuoteBtn'),
   focusBtn: document.getElementById('focusBtn'),
   themeBtn: document.getElementById('themeBtn'),
@@ -552,26 +584,25 @@ const els = {
   focusExitFloatingBtn: document.getElementById('focusExitFloatingBtn'),
   exitFocusBtn: document.getElementById('exitFocusBtn'),
   focusExitBanner,
-  aiPrompt: document.getElementById('aiPrompt'),
-  aiAskBtn: document.getElementById('aiAskBtn'),
-  aiClearBtn: document.getElementById('aiClearBtn'),
-  aiResult: document.getElementById('aiResult'),
-  authOverlay: document.getElementById('authOverlay'),
-  authName: document.getElementById('authName'),
-  authEmail: document.getElementById('authEmail'),
-  authPassword: document.getElementById('authPassword'),
-  authLoginBtn: document.getElementById('authLoginBtn'),
-  authRegisterBtn: document.getElementById('authRegisterBtn'),
-  authOfflineBtn: document.getElementById('authOfflineBtn'),
-  authStatus: document.getElementById('authStatus'),
+  adaptiveModeLabel: document.getElementById('adaptiveModeLabel'),
+  adaptiveModeText: document.getElementById('adaptiveModeText'),
+  moodLabel: document.getElementById('moodLabel'),
+  energySlider: document.getElementById('energySlider'),
+  smartTimeline: document.getElementById('smartTimeline'),
+  assistantTitle: document.getElementById('assistantTitle'),
+  assistantText: document.getElementById('assistantText'),
+  assistantRefreshBtn: document.getElementById('assistantRefreshBtn'),
+  commandPalette: document.getElementById('commandPalette'),
+  commandBackdrop: document.getElementById('commandBackdrop'),
+  commandInput: document.getElementById('commandInput'),
+  commandList: document.getElementById('commandList'),
+  openCommandBtn: document.getElementById('openCommandBtn'),
 }
 
 let timerInterval = null
 let focusInterval = null
 let focusHistoryPushed = false
 let audioContext = null
-let auth = loadAuth()
-let apiAvailable = false
 
 registerActiveDay()
 syncTheme()
@@ -579,11 +610,9 @@ syncThemeSwitches()
 renderAll()
 forceCloseFocusMode()
 renderBuildStamp()
-renderAuthState()
 
 setupEvents()
 hideLoader()
-void bootstrapSession()
 
 function setupEvents() {
   els.newQuoteBtn.addEventListener('click', () => {
@@ -614,6 +643,23 @@ function setupEvents() {
   bindExitControl(els.focusCloseBtn)
   bindExitControl(els.focusExitFloatingBtn)
   bindExitControl(els.focusExitBanner)
+  els.energySlider.addEventListener('input', handleEnergyChange)
+  document.querySelectorAll('[data-mood]').forEach((button) => {
+    button.addEventListener('click', () => setMood(button.dataset.mood))
+  })
+  els.assistantRefreshBtn.addEventListener('click', refreshAssistant)
+  els.openCommandBtn.addEventListener('click', openCommandPalette)
+  els.commandBackdrop.addEventListener('click', closeCommandPalette)
+  els.commandInput.addEventListener('input', renderCommandPalette)
+  els.commandInput.addEventListener('keydown', handleCommandKeys)
+  document.addEventListener('keydown', handleGlobalKeys)
+  document.querySelectorAll('[data-dock]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const target = document.querySelector(button.dataset.dock)
+      target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  })
+  document.addEventListener('pointermove', handlePointerMove, { passive: true })
   els.focusHours.addEventListener('input', syncFocusDurationFromInputs)
   els.focusMinutes.addEventListener('input', syncFocusDurationFromInputs)
   els.focusSeconds.addEventListener('input', syncFocusDurationFromInputs)
@@ -626,16 +672,6 @@ function setupEvents() {
     button.addEventListener('click', () => applyFocusPreset(Number(button.dataset.focusPreset)))
   })
 
-  els.aiAskBtn.addEventListener('click', askAI)
-  els.aiClearBtn.addEventListener('click', () => {
-    els.aiPrompt.value = ''
-    els.aiResult.textContent = 'AI suggestions will appear here.'
-  })
-
-  els.authLoginBtn.addEventListener('click', () => submitAuth('login'))
-  els.authRegisterBtn.addEventListener('click', () => submitAuth('register'))
-  els.authOfflineBtn.addEventListener('click', useOfflineMode)
-
   els.notesInput.addEventListener('input', handleNotesInput)
   els.resetBtn.addEventListener('click', resetAllData)
 
@@ -644,10 +680,6 @@ function setupEvents() {
       const target = document.querySelector(button.dataset.scroll)
       target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     })
-  })
-
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') exitFocusMode()
   })
 
   window.addEventListener('popstate', () => {
@@ -722,9 +754,10 @@ function normalizeState(input) {
       running: Boolean(input.focusSession?.running),
     },
     focusSettings: normalizeFocusSettings(input.focusSettings, input.focusSession?.duration),
+    mood: ['calm', 'focused', 'stressed', 'tired'].includes(input.mood) ? input.mood : fallback.mood,
+    energy: Number.isFinite(input.energy) ? Math.min(100, Math.max(0, input.energy)) : fallback.energy,
     appearance: normalizeAppearance(input.appearance),
     taskHistory: Array.isArray(input.taskHistory) ? input.taskHistory.slice(0, 20).map(normalizeHistoryItem).filter(Boolean) : [],
-    aiHistory: Array.isArray(input.aiHistory) ? input.aiHistory : [],
     notes: String(input.notes ?? fallback.notes),
     theme: input.theme === 'light' ? 'light' : 'dark',
     soundEnabled: input.soundEnabled !== false,
@@ -734,192 +767,17 @@ function normalizeState(input) {
   }
 }
 
-function loadAuth() {
-  try {
-    const raw = localStorage.getItem(AUTH_KEY)
-    if (!raw) return { mode: 'guest', token: '', user: null }
-    return JSON.parse(raw)
-  } catch {
-    return { mode: 'guest', token: '', user: null }
-  }
-}
-
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
-  if (auth.mode === 'backend' && auth.token) {
-    void syncStateToServer().catch(() => {})
-  }
-}
-
-function saveAuth() {
-  localStorage.setItem(AUTH_KEY, JSON.stringify(auth))
-}
-
-function renderAuthState() {
-  els.authInfo.textContent = apiAvailable
-    ? 'Use the backend for login, database sync, and AI features. Offline mode is still available.'
-    : 'Backend is not reachable right now, so offline mode is the fastest way in.'
-
-  if (auth.mode === 'backend' && auth.user) {
-    els.authStatus.textContent = `Signed in as ${auth.user.name}`
-    els.authOverlay.hidden = true
-    els.focusBtn.disabled = false
-    return
-  }
-
-  els.authStatus.textContent = auth.mode === 'offline' ? 'Offline mode enabled' : 'Not signed in'
-  els.authOverlay.hidden = auth.mode === 'offline'
-}
-
-async function bootstrapSession() {
-  apiAvailable = await pingApi()
-  if (auth.mode !== 'backend' || !auth.token) {
-    renderAuthState()
-    return
-  }
-
-  try {
-    const me = await apiGet('/api/me', true)
-    if (me?.user) auth.user = me.user
-    const result = await apiGet('/api/state', true)
-    if (result?.state) {
-      Object.assign(state, normalizeState(result.state))
-      saveState()
-      renderAll()
-    }
-  } catch {
-    auth = { mode: 'offline', token: '', user: null }
-    saveAuth()
-  }
-
-  renderAuthState()
-}
-
-async function submitAuth(mode) {
-  const payload = {
-    name: els.authName.value.trim(),
-    email: els.authEmail.value.trim(),
-    password: els.authPassword.value,
-  }
-
-  if (!payload.email || !payload.password || (mode === 'register' && !payload.name)) {
-    showToast('Enter name, email, and password')
-    return
-  }
-
-  try {
-    const result = await apiPost(`/api/auth/${mode}`, payload)
-    auth = { mode: 'backend', token: result.token, user: result.user }
-    saveAuth()
-    if (result.state) {
-      Object.assign(state, normalizeState(result.state))
-      saveState()
-      renderAll()
-    }
-    renderAuthState()
-    showToast(mode === 'login' ? 'Logged in' : 'Account created')
-  } catch (error) {
-    showToast(error instanceof Error ? error.message : 'Authentication failed')
-  }
-}
-
-function useOfflineMode() {
-  auth = { mode: 'offline', token: '', user: null }
-  saveAuth()
-  renderAuthState()
-  showToast('Offline mode enabled')
-}
-
-async function syncStateToServer() {
-  if (auth.mode !== 'backend' || !auth.token) return
-  await apiPut('/api/state', { state })
-}
-
-async function askAI() {
-  const prompt = els.aiPrompt.value.trim()
-  if (!prompt) {
-    showToast('Write a prompt first')
-    return
-  }
-
-  els.aiResult.textContent = 'Thinking...'
-  try {
-    const result = await apiPost('/api/ai/suggest', { prompt, context: state })
-    els.aiResult.textContent = result.suggestion || 'No suggestion returned.'
-    pushTaskHistory('ai', 'AI coach', 'Generated a new suggestion')
-    saveState()
-  } catch {
-    els.aiResult.textContent = suggestLocally(prompt, state)
-  }
-}
-
-async function pingApi() {
-  try {
-    await fetch(`${API_BASE}/api/health`)
-    return true
-  } catch {
-    return false
-  }
-}
-
-async function apiGet(pathname, authRequired = false) {
-  const response = await fetch(`${API_BASE}${pathname}`, {
-    headers: authRequired && auth.token ? { Authorization: `Bearer ${auth.token}` } : {},
-  })
-  if (!response.ok) throw new Error(await readError(response))
-  return response.json()
-}
-
-async function apiPost(pathname, body) {
-  const response = await fetch(`${API_BASE}${pathname}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(auth.token ? { Authorization: `Bearer ${auth.token}` } : {}),
-    },
-    body: JSON.stringify(body),
-  })
-  if (!response.ok) throw new Error(await readError(response))
-  return response.json()
-}
-
-async function apiPut(pathname, body) {
-  const response = await fetch(`${API_BASE}${pathname}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(auth.token ? { Authorization: `Bearer ${auth.token}` } : {}),
-    },
-    body: JSON.stringify(body),
-  })
-  if (!response.ok) throw new Error(await readError(response))
-  return response.json()
-}
-
-async function readError(response) {
-  try {
-    const body = await response.json()
-    return body.error || response.statusText
-  } catch {
-    return response.statusText
-  }
-}
-
-function suggestLocally(prompt, context) {
-  const text = String(prompt || '').toLowerCase()
-  const tasks = Array.isArray(context?.tasks) ? context.tasks : []
-  const openTasks = tasks.filter((task) => !task.completed).length
-  if (text.includes('plan')) return `You have ${openTasks} open tasks. Start with the smallest one, then run 25 minutes of focus.`
-  if (text.includes('study')) return 'Use one session for recall, one for practice, then one for review.'
-  if (text.includes('task')) return 'Pick one task, set a 25-minute timer, and stop after that one win.'
-  return 'Keep it simple: one goal, one timer, one next action.'
 }
 
 function renderAll() {
   registerActiveDay()
   renderTheme()
+  updateAtmosphere()
   renderMotivation()
   renderOverview()
+  renderAdaptiveShell()
   renderTasks()
   renderTimer()
   renderNotes()
@@ -968,9 +826,10 @@ function renderOverview() {
   const completedToday = getTodayStats().completedTasks
   const focusMinutes = getTodayStats().focusMinutes
   const nextClass = getNextClass(now)
+  const adaptive = getAdaptiveMode()
 
   els.greeting.textContent = `${greeting}, student.`
-  els.heroSummary.textContent = `You have ${openTasks} open task${openTasks === 1 ? '' : 's'}, ${focusMinutes} focus minute${focusMinutes === 1 ? '' : 's'} logged, and ${state.streak} day${state.streak === 1 ? '' : 's'} in your streak.`
+  els.heroSummary.textContent = adaptive.description
   els.tasksLeftStat.textContent = String(openTasks)
   els.tasksDoneStat.textContent = `${completedToday} completed today`
   els.nextClassStat.textContent = nextClass.title
@@ -982,14 +841,236 @@ function renderOverview() {
   els.timerTodayStat.textContent = `${focusMinutes} min`
 }
 
+function renderAdaptiveShell() {
+  const mode = getAdaptiveMode()
+  els.adaptiveModeLabel.textContent = `${mode.label} mode`
+  els.adaptiveModeText.textContent = mode.description
+  els.moodLabel.textContent = `${capitalize(state.mood)} · ${state.energy}% energy`
+  els.energySlider.value = String(state.energy)
+  document.querySelectorAll('[data-mood]').forEach((button) => {
+    button.dataset.active = String(button.dataset.mood === state.mood)
+  })
+  renderSmartTimeline()
+  renderAssistant()
+  renderCommandPalette()
+}
+
+function renderSmartTimeline() {
+  const items = getTimelineItems()
+  els.smartTimeline.innerHTML = items
+    .map(
+      (item, index) => `
+        <article class="timeline-item ${item.kind}">
+          <span class="timeline-index">${String(index + 1).padStart(2, '0')}</span>
+          <div>
+            <strong>${escapeHtml(item.title)}</strong>
+            <p>${escapeHtml(item.detail)}</p>
+          </div>
+        </article>
+      `,
+    )
+    .join('')
+}
+
+function renderAssistant() {
+  const suggestion = getAssistantSuggestion()
+  els.assistantTitle.textContent = suggestion.title
+  els.assistantText.textContent = suggestion.text
+}
+
+function renderCommandPalette() {
+  if (els.commandPalette.hidden) return
+  const query = els.commandInput.value.trim().toLowerCase()
+  const actions = getCommands().filter((command) => {
+    if (!query) return true
+    return `${command.title} ${command.detail}`.toLowerCase().includes(query)
+  })
+
+  els.commandList.innerHTML = actions
+    .slice(0, 7)
+    .map(
+      (command, index) => `
+        <button type="button" class="command-item" data-command="${command.id}">
+          <span>${escapeHtml(command.title)}</span>
+          <small>${escapeHtml(command.detail)}</small>
+          <kbd>${index === 0 ? 'Enter' : 'Tab'}</kbd>
+        </button>
+      `,
+    )
+    .join('') || '<div class="empty-state">No matching command.</div>'
+
+  els.commandList.querySelectorAll('[data-command]').forEach((button) => {
+    button.addEventListener('click', () => executeCommand(button.dataset.command))
+  })
+}
+
+function updateAtmosphere() {
+  const hour = new Date().getHours()
+  const period = hour < 11 ? 'morning' : hour < 17 ? 'day' : hour < 21 ? 'evening' : 'night'
+  document.body.dataset.period = period
+}
+
+function getAdaptiveMode() {
+  const hour = new Date().getHours()
+  if (hour < 11) {
+    return {
+      label: 'Morning',
+      description: 'Planning, timetable, and quick wins are emphasized this session.',
+    }
+  }
+  if (hour < 17) {
+    return {
+      label: 'Day',
+      description: 'Focus on tasks, progress, and the next important deadline.',
+    }
+  }
+  if (hour < 21) {
+    return {
+      label: 'Evening',
+      description: 'Review, deep work, and wrap-up suggestions are prioritized.',
+    }
+  }
+  return {
+    label: 'Night',
+    description: 'The UI shifts toward reflection, light review, and tomorrow prep.',
+  }
+}
+
+function getTimelineItems() {
+  const openTasks = state.tasks.filter((task) => !task.completed)
+  const sorted = [...openTasks].sort((a, b) => Number(b.createdAt) - Number(a.createdAt))
+  const overdue = sorted.filter((task) => Date.now() - Number(task.createdAt) > 3 * 24 * 60 * 60 * 1000)
+  const nextTask = sorted[0]
+  const laterTask = sorted[1]
+
+  return [
+    {
+      kind: 'now',
+      title: nextTask ? nextTask.title : 'Nothing urgent',
+      detail: nextTask ? `Start ${nextTask.category.toLowerCase()} work now.` : 'Take a breath, then open your notes.',
+    },
+    {
+      kind: 'next',
+      title: laterTask ? laterTask.title : 'Review block',
+      detail: laterTask ? `After that, move to ${laterTask.category.toLowerCase()}.` : 'Spend 10 minutes reviewing the day.',
+    },
+    {
+      kind: 'later',
+      title: overdue.length ? `${overdue.length} overdue task${overdue.length === 1 ? '' : 's'}` : 'Light admin',
+      detail: overdue.length ? `You should clear ${overdue[0].title} first.` : 'Reserve a short block for planning.',
+    },
+  ]
+}
+
+function getAssistantSuggestion() {
+  const mode = getAdaptiveMode().label
+  const moodText = {
+    calm: 'Your calm state is ideal for steady review and planning.',
+    focused: 'You have focus momentum. Use it on the highest-value task.',
+    stressed: 'Keep it small. One task, one timer, one win.',
+    tired: 'Switch to lighter work and a shorter focus block.',
+  }
+  return {
+    title: `Suggested next step for ${mode.toLowerCase()} mode`,
+    text: moodText[state.mood] ?? 'Open your next task and start with a tiny first step.',
+  }
+}
+
+function getCommands() {
+  return [
+    { id: 'tasks', title: 'Go to tasks', detail: 'Jump to the task manager' },
+    { id: 'focus', title: 'Start focus mode', detail: 'Open immersive focus' },
+    { id: 'timeline', title: 'Open smart timeline', detail: 'Scroll to now/next/later' },
+    { id: 'mood-calm', title: 'Set mood calm', detail: 'Shift the UI to calm' },
+    { id: 'mood-focused', title: 'Set mood focused', detail: 'Boost focus energy' },
+    { id: 'mood-stressed', title: 'Set mood stressed', detail: 'Reduce cognitive load' },
+    { id: 'mood-tired', title: 'Set mood tired', detail: 'Suggest lighter work' },
+    { id: 'theme', title: 'Toggle theme', detail: 'Switch dark or light' },
+    { id: 'quote', title: 'New quote', detail: 'Refresh the motivation card' },
+    { id: 'timer', title: 'Open focus timer', detail: 'Jump to the Pomodoro section' },
+  ]
+}
+
+function executeCommand(id) {
+  closeCommandPalette()
+  if (id === 'tasks') return document.querySelector('#tasksPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  if (id === 'focus') return enterFocusMode()
+  if (id === 'timeline') return document.querySelector('#adaptiveStrip')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  if (id === 'theme') return toggleTheme()
+  if (id === 'quote') return els.newQuoteBtn.click()
+  if (id === 'timer') return document.querySelector('#timerPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  if (id.startsWith('mood-')) return setMood(id.replace('mood-', ''))
+}
+
+function setMood(mood) {
+  state.mood = mood
+  saveState()
+  renderAll()
+  showToast(`Mood set to ${mood}`)
+}
+
+function handleEnergyChange() {
+  state.energy = Number(els.energySlider.value)
+  saveState()
+  renderAdaptiveShell()
+}
+
+function refreshAssistant() {
+  renderAssistant()
+  showToast('Suggestion refreshed')
+}
+
+function openCommandPalette() {
+  els.commandPalette.hidden = false
+  els.commandInput.value = ''
+  renderCommandPalette()
+  window.requestAnimationFrame(() => els.commandInput.focus())
+}
+
+function closeCommandPalette() {
+  els.commandPalette.hidden = true
+}
+
+function handleCommandKeys(event) {
+  if (event.key === 'Escape') closeCommandPalette()
+  if (event.key === 'Enter') {
+    const first = els.commandList.querySelector('[data-command]')
+    if (first) executeCommand(first.dataset.command)
+  }
+}
+
+function handleGlobalKeys(event) {
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+    event.preventDefault()
+    if (els.commandPalette.hidden) openCommandPalette()
+    else closeCommandPalette()
+  }
+  if (event.key === 'Escape' && !els.focusOverlay.hidden) {
+    exitFocusMode()
+  }
+}
+
+function handlePointerMove(event) {
+  const x = (event.clientX / window.innerWidth) * 100
+  const y = (event.clientY / window.innerHeight) * 100
+  document.body.style.setProperty('--cursor-x', x.toFixed(2))
+  document.body.style.setProperty('--cursor-y', y.toFixed(2))
+}
+
+function capitalize(value) {
+  return String(value).charAt(0).toUpperCase() + String(value).slice(1)
+}
+
 function renderTasks() {
   const tasks = state.tasks
   els.taskCountPill.textContent = `${tasks.length} item${tasks.length === 1 ? '' : 's'}`
   els.taskList.innerHTML = tasks.length
     ? tasks
         .map(
-          (task) => `
-            <article class="task-item ${task.completed ? 'done' : ''}">
+          (task) => {
+            const overdue = !task.completed && Date.now() - Number(task.createdAt) > 3 * 24 * 60 * 60 * 1000
+            return `
+            <article class="task-item ${task.completed ? 'done' : ''} ${overdue ? 'overdue' : ''}">
               <label class="task-check">
                 <input type="checkbox" data-action="toggle" data-id="${task.id}" ${task.completed ? 'checked' : ''} />
                 <span>${escapeHtml(task.title)}</span>
@@ -1002,7 +1083,8 @@ function renderTasks() {
                 </div>
               </div>
             </article>
-          `,
+          `
+          },
         )
         .join('')
     : '<div class="empty-state">Add a task to get started.</div>'
