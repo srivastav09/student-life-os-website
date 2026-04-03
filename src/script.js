@@ -1,5 +1,9 @@
 const STORAGE_KEY = 'student-life-os.website-state.v1'
 
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('App started')
+  try {
+
 function makeId() {
   return typeof crypto?.randomUUID === 'function' ? crypto.randomUUID() : `id-${Math.random().toString(36).slice(2, 10)}`
 }
@@ -13,6 +17,11 @@ window.setTimeout(() => {
   const loaderNode = document.querySelector('.loader')
   if (loaderNode) loaderNode.style.display = 'none'
 }, 3000)
+
+window.setTimeout(() => {
+  const loaderNode = document.querySelector('.loader')
+  if (loaderNode) loaderNode.style.display = 'none'
+}, 2000)
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const PERIODS = [
@@ -895,8 +904,16 @@ function loadState() {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return fallback
 
-    const parsed = JSON.parse(raw)
+    const parsed = safeParseJSON(raw, fallback)
     return normalizeState({ ...fallback, ...parsed })
+  } catch {
+    return fallback
+  }
+}
+
+function safeParseJSON(raw, fallback) {
+  try {
+    return JSON.parse(raw)
   } catch {
     return fallback
   }
@@ -2236,3 +2253,11 @@ function hideLoader() {
   window.setTimeout(() => loader.classList.add('hide'), 500)
   window.setTimeout(() => loader.remove(), 1200)
 }
+
+  } catch (error) {
+    console.error('App crashed:', error)
+  } finally {
+    const loaderNode = document.querySelector('.loader')
+    if (loaderNode) loaderNode.style.display = 'none'
+  }
+})
