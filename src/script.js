@@ -150,7 +150,6 @@ app.innerHTML = `
           <span class="quote-label">Motivation</span>
           <p id="quoteText">Small progress is still progress.</p>
           <small id="quoteAuthor">Student Life OS</small>
-          <button type="button" class="ghost-button dock-button" id="newQuoteBtn">New quote</button>
         </div>
       </aside>
 
@@ -704,7 +703,7 @@ setupEvents()
 hideLoader()
 
 function setupEvents() {
-  els.newQuoteBtn?.addEventListener('click', () => {
+  els.newQuoteBtn.addEventListener('click', () => {
     state.quoteIndex = randomQuoteIndex()
     saveState()
     renderMotivation()
