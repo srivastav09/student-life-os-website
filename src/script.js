@@ -89,10 +89,6 @@ function cloneStateValue(value) {
 }
 
 const app = document.getElementById('app')
-const loader = document.createElement('div')
-loader.className = 'loader'
-loader.innerHTML = '<span></span><span></span><span></span>'
-document.body.append(loader)
 
 app.innerHTML = `
   <header class="topbar glass fade-in">
@@ -709,7 +705,6 @@ forceCloseFocusMode()
 renderBuildStamp()
 
 setupEvents()
-hideLoader()
 
 function setupEvents() {
   els.newQuoteBtn?.addEventListener('click', () => {
@@ -1888,9 +1883,4 @@ function showToast(message) {
   els.toast.classList.add('show')
   window.clearTimeout(showToast._timer)
   showToast._timer = window.setTimeout(() => els.toast.classList.remove('show'), 1800)
-}
-
-function hideLoader() {
-  window.setTimeout(() => loader.classList.add('hide'), 500)
-  window.setTimeout(() => loader.remove(), 1200)
 }
