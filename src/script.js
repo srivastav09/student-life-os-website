@@ -1,5 +1,19 @@
 const STORAGE_KEY = 'student-life-os.website-state.v1'
 
+function makeId() {
+  return typeof crypto?.randomUUID === 'function' ? crypto.randomUUID() : `id-${Math.random().toString(36).slice(2, 10)}`
+}
+
+window.addEventListener('load', () => {
+  const loaderNode = document.querySelector('.loader')
+  if (loaderNode) loaderNode.style.display = 'none'
+})
+
+window.setTimeout(() => {
+  const loaderNode = document.querySelector('.loader')
+  if (loaderNode) loaderNode.style.display = 'none'
+}, 3000)
+
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const PERIODS = [
   { label: 'Morning', time: '08:00 - 10:00' },
@@ -18,7 +32,7 @@ const QUOTES = [
 
 const DEFAULT_TASKS = [
   {
-    id: crypto.randomUUID(),
+    id: makeId(),
     title: 'Review chemistry notes',
     category: 'Study',
     priority: 'high',
@@ -26,7 +40,7 @@ const DEFAULT_TASKS = [
     createdAt: Date.now(),
   },
   {
-    id: crypto.randomUUID(),
+    id: makeId(),
     title: 'Submit assignment draft',
     category: 'Exams',
     priority: 'medium',
@@ -116,11 +130,17 @@ const defaultState = () => ({
   aiHistory: [],
 })
 
-const app = document.getElementById('app')
+const app = document.getElementById('app') ?? (() => {
+  console.error('Missing #app root')
+  const fallbackApp = document.createElement('div')
+  fallbackApp.id = 'app'
+  document.body?.append(fallbackApp)
+  return fallbackApp
+})()
 const loader = document.createElement('div')
 loader.className = 'loader'
 loader.innerHTML = '<span></span><span></span><span></span>'
-document.body.append(loader)
+document.body?.append(loader)
 
 app.innerHTML = `
   <header class="topbar glass fade-in">
@@ -643,7 +663,7 @@ focusExitBanner.type = 'button'
 focusExitBanner.className = 'focus-exit-banner'
 focusExitBanner.textContent = 'Exit focus mode'
 focusExitBanner.hidden = true
-document.body.append(focusExitBanner)
+document.body?.append(focusExitBanner)
 
 const state = loadState()
 
@@ -750,15 +770,29 @@ let focusAlarmInterval = null
 let focusHistoryPushed = false
 let audioContext = null
 
-registerActiveDay()
-syncTheme()
-syncThemeSwitches()
-renderAll()
-forceCloseFocusMode()
-renderBuildStamp()
+function bootstrapApp() {
+  try {
+    console.log('App started')
+    registerActiveDay()
+    syncTheme()
+    syncThemeSwitches()
+    renderAll()
+    forceCloseFocusMode()
+    renderBuildStamp()
+    setupEvents()
+    console.log('Feature loaded')
+  } catch (error) {
+    console.error('Boot error', error)
+  } finally {
+    hideLoader()
+  }
+}
 
-setupEvents()
-hideLoader()
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootstrapApp, { once: true })
+} else {
+  bootstrapApp()
+}
 
 function setupEvents() {
   els.newQuoteBtn.addEventListener('click', () => {
@@ -881,7 +915,7 @@ function normalizeState(input) {
     ...fallback,
     ...input,
     tasks: tasks.map((task) => ({
-      id: task.id ?? crypto.randomUUID(),
+      id: task.id ?? makeId(),
       title: String(task.title ?? '').trim(),
       category: ['Study', 'Personal', 'Exams'].includes(task.category) ? task.category : 'Study',
       priority: ['high', 'medium', 'low'].includes(String(task.priority).toLowerCase()) ? String(task.priority).toLowerCase() : 'medium',
@@ -921,7 +955,11 @@ function normalizeState(input) {
 }
 
 function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  } catch (error) {
+    console.error('Save failed', error)
+  }
 }
 
 function renderAll() {
@@ -1429,7 +1467,7 @@ function handleTaskSubmit(event) {
     showToast('Task updated')
   } else {
     state.tasks.unshift({
-      id: crypto.randomUUID(),
+      id: makeId(),
       title,
       category,
       priority,
@@ -1895,7 +1933,7 @@ function normalizeAppearance(appearance) {
 function normalizeHistoryItem(entry) {
   if (!entry || typeof entry !== 'object') return null
   return {
-    id: String(entry.id ?? crypto.randomUUID()),
+    id: String(entry.id ?? makeId()),
     action: String(entry.action ?? 'updated'),
     title: String(entry.title ?? 'Task'),
     detail: String(entry.detail ?? ''),
@@ -1919,7 +1957,7 @@ function focusSettingsToSeconds(settings) {
 
 function pushTaskHistory(action, title, detail) {
   state.taskHistory.unshift({
-    id: crypto.randomUUID(),
+    id: makeId(),
     action,
     title,
     detail,
@@ -2194,6 +2232,7 @@ function showToast(message) {
 }
 
 function hideLoader() {
+  if (loader) loader.style.display = 'none'
   window.setTimeout(() => loader.classList.add('hide'), 500)
   window.setTimeout(() => loader.remove(), 1200)
 }
