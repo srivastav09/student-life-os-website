@@ -32,6 +32,11 @@ const fieldVariants = {
   show: { opacity: 1, y: 0 },
 }
 
+const listVariants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.07, delayChildren: 0.05 } },
+}
+
 export function TimetablePage() {
   const classes = useAppStore((state) => state.classes)
   const addClass = useAppStore((state) => state.addClass)
@@ -78,24 +83,25 @@ export function TimetablePage() {
   })
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-surface)] p-5 md:flex-row md:items-center md:justify-between">
+    <motion.div className="space-y-6" initial="hidden" animate="show" variants={listVariants}>
+      <motion.div whileHover={{ y: -3 }} transition={{ type: 'spring', stiffness: 120, damping: 18 }} className="flex flex-col gap-4 rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-surface)] p-5 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-sm text-[var(--app-muted)]">Timetable planner</p>
           <h2 className="text-2xl font-semibold text-[var(--app-fg)]">Weekly grid for Mon-Sat</h2>
         </div>
-        <Button onClick={() => setOpen(true)}><CalendarPlus className="mr-2 h-4 w-4" />Add class</Button>
-      </div>
+        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}><Button onClick={() => setOpen(true)}><CalendarPlus className="mr-2 h-4 w-4" />Add class</Button></motion.div>
+      </motion.div>
 
       {clash ? <Card className="border-amber-400/30 bg-amber-400/10 text-amber-900 shadow-lg shadow-amber-400/10"><TriangleAlert className="mb-2 h-5 w-5" />The slot clashes with an existing class.</Card> : null}
 
       <div className="grid gap-4 xl:grid-cols-3">
         {days.map((day) => (
-          <Card key={day} className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-[var(--app-fg)]">{day}</h3>
-              <Badge>{grouped[day].length}</Badge>
-            </div>
+            <motion.div key={day} whileHover={{ y: -2 }} transition={{ type: 'spring', stiffness: 120, damping: 18 }}>
+            <Card className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-[var(--app-fg)]">{day}</h3>
+                <Badge>{grouped[day].length}</Badge>
+              </div>
             <div className="space-y-3">
               <AnimatePresence>
                 {grouped[day].map((entry) => (
@@ -120,6 +126,7 @@ export function TimetablePage() {
               </AnimatePresence>
             </div>
           </Card>
+          </motion.div>
         ))}
       </div>
 
@@ -171,6 +178,6 @@ export function TimetablePage() {
           </motion.div>
         </motion.form>
       </Modal>
-    </div>
+    </motion.div>
   )
 }

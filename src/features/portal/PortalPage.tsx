@@ -37,19 +37,111 @@ const branchCards = [
   { key: 'CSE AIDS', full: 'AI & Data Science', icon: Layers3, accent: 'from-emerald-500 to-teal-600' },
 ] as const
 
-const portalStats = [
-  { label: 'Materials', value: '0' },
-  { label: 'Branches', value: '4' },
-  { label: 'Updates', value: '0' },
-  { label: 'Semesters', value: '8' },
-]
-
 const adminTabs = [
   { id: 'upload', label: 'Upload Material', icon: Upload },
   { id: 'manage', label: 'Manage Content', icon: Grid2X2 },
   { id: 'update', label: 'Post Update', icon: Bell },
   { id: 'timetable', label: 'Timetable', icon: CalendarDays },
 ] as const
+
+type BranchKey = 'CSE' | 'CSM' | 'CSE AI' | 'CSE AIDS'
+
+type BranchMaterial = {
+  id: string
+  title: string
+  type: string
+  detail: string
+  meta: string
+}
+
+type BranchSchedule = {
+  id: string
+  day: string
+  time: string
+  subject: string
+  room: string
+}
+
+type BranchUpdate = {
+  id: string
+  title: string
+  detail: string
+}
+
+type BranchContent = {
+  materials: BranchMaterial[]
+  schedule: BranchSchedule[]
+  updates: BranchUpdate[]
+}
+
+type PortalContent = Record<BranchKey, BranchContent>
+
+const PORTAL_STORAGE_KEY = 'student-life-os.portal-content.v1'
+
+const branchDirectory: PortalContent = {
+  CSE: {
+    materials: [
+      { id: 'cse-m1', title: 'Data Structures Quick Notes', type: 'Notes', detail: 'Arrays, linked lists, stacks, and practice prompts for revision.', meta: 'Sem 2' },
+      { id: 'cse-m2', title: 'DBMS Revision Pack', type: 'Previous Papers', detail: 'Normalization, SQL, and exam-ready diagrams in one place.', meta: 'Sem 3' },
+    ],
+    schedule: [
+      { id: 'cse-s1', day: 'Mon', time: '09:00 - 10:00', subject: 'DBMS', room: 'C-204' },
+      { id: 'cse-s2', day: 'Tue', time: '11:00 - 12:00', subject: 'OS Lab', room: 'Lab-1' },
+    ],
+    updates: [
+      { id: 'cse-u1', title: 'Tutorial moved to Lab-2', detail: 'The Thursday DBMS tutorial now runs in Lab-2 at 2 PM.' },
+      { id: 'cse-u2', title: 'Assignment reminder', detail: 'Upload the DS mini-project draft before Friday evening.' },
+    ],
+  },
+  CSM: {
+    materials: [
+      { id: 'csm-m1', title: 'ML Foundations Sheet', type: 'Notes', detail: 'Core formulas, model intuition, and quick revision summaries.', meta: 'Sem 1' },
+      { id: 'csm-m2', title: 'Probability Practice Set', type: 'Assignments', detail: 'Focused problems on distributions, mean, variance, and sampling.', meta: 'Sem 2' },
+    ],
+    schedule: [
+      { id: 'csm-s1', day: 'Wed', time: '10:00 - 11:00', subject: 'Linear Algebra', room: 'A-101' },
+      { id: 'csm-s2', day: 'Fri', time: '13:00 - 14:00', subject: 'Machine Learning', room: 'Seminar Hall' },
+    ],
+    updates: [
+      { id: 'csm-u1', title: 'Lab checklist uploaded', detail: 'The new ML lab checklist is ready for the next cycle.' },
+      { id: 'csm-u2', title: 'Mentor hour confirmed', detail: 'Mentor hour remains at 4 PM every Wednesday.' },
+    ],
+  },
+  'CSE AI': {
+    materials: [
+      { id: 'ai-m1', title: 'AI Concepts Starter Kit', type: 'Syllabus', detail: 'Search, inference, and agent fundamentals with clean examples.', meta: 'Sem 1' },
+      { id: 'ai-m2', title: 'Python for AI Lab', type: 'Notes', detail: 'Notebook-friendly snippets for data prep, plots, and experiments.', meta: 'Sem 2' },
+    ],
+    schedule: [
+      { id: 'ai-s1', day: 'Mon', time: '10:00 - 11:00', subject: 'Python', room: 'Lab-3' },
+      { id: 'ai-s2', day: 'Thu', time: '14:00 - 15:00', subject: 'AI Theory', room: 'C-301' },
+    ],
+    updates: [
+      { id: 'ai-u1', title: 'Project topics shared', detail: 'The department shared a fresh list of AI mini-project topics.' },
+      { id: 'ai-u2', title: 'Workshop registration open', detail: 'Register for the weekend model-building workshop before seats fill.' },
+    ],
+  },
+  'CSE AIDS': {
+    materials: [
+      { id: 'aids-m1', title: 'Data Visualization Pack', type: 'Notes', detail: 'Charts, dashboards, and design tips for clean presentation.', meta: 'Sem 2' },
+      { id: 'aids-m2', title: 'Statistics Crash Course', type: 'Syllabus', detail: 'Probability, sampling, and hypothesis testing in a compact format.', meta: 'Sem 3' },
+    ],
+    schedule: [
+      { id: 'aids-s1', day: 'Tue', time: '09:00 - 10:00', subject: 'Statistics', room: 'D-102' },
+      { id: 'aids-s2', day: 'Sat', time: '11:00 - 12:00', subject: 'Data Science Lab', room: 'Lab-4' },
+    ],
+    updates: [
+      { id: 'aids-u1', title: 'Dashboard review scheduled', detail: 'The next visualization review is on Saturday after class.' },
+      { id: 'aids-u2', title: 'Resource bundle refreshed', detail: 'The data science resource pack has been updated for this term.' },
+    ],
+  },
+}
+
+const createDefaultPortalContent = (): PortalContent => structuredClone(branchDirectory)
+
+function createPortalId(prefix: string) {
+  return `${prefix}-${Math.random().toString(36).slice(2, 10)}`
+}
 
 const portalMotion = {
   hidden: { opacity: 0, y: 18 },
@@ -157,6 +249,12 @@ export default function PortalPage() {
   const [branchModalOpen, setBranchModalOpen] = useState(false)
   const [adminOpen, setAdminOpen] = useState(false)
   const [adminTab, setAdminTab] = useState<(typeof adminTabs)[number]['id']>('upload')
+  const [portalData, setPortalData] = useState<PortalContent>(() => createDefaultPortalContent())
+  const [adminBranch, setAdminBranch] = useState<BranchKey>('CSE')
+  const [feedback, setFeedback] = useState('')
+  const [materialDraft, setMaterialDraft] = useState({ title: '', type: 'Notes', meta: 'Sem 1', detail: '' })
+  const [updateDraft, setUpdateDraft] = useState({ title: '', detail: '' })
+  const [scheduleDraft, setScheduleDraft] = useState({ day: 'Mon', time: '09:00 - 10:00', subject: '', room: '' })
 
   useEffect(() => {
     setSelectedSection(sectionsByBranch[selectedBranch][0])
@@ -166,12 +264,99 @@ export default function PortalPage() {
     document.documentElement.style.scrollBehavior = 'smooth'
   }, [])
 
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(PORTAL_STORAGE_KEY)
+      if (!stored) return
+      const parsed = JSON.parse(stored) as PortalContent
+      setPortalData(parsed)
+    } catch {
+      setPortalData(createDefaultPortalContent())
+    }
+  }, [])
+
+  useEffect(() => {
+    window.localStorage.setItem(PORTAL_STORAGE_KEY, JSON.stringify(portalData))
+  }, [portalData])
+
+  useEffect(() => {
+    if (!feedback) return
+    const timer = window.setTimeout(() => setFeedback(''), 2200)
+    return () => window.clearTimeout(timer)
+  }, [feedback])
+
   const branchInfo = useMemo(
     () => branchCards.find((branch) => branch.key === selectedBranch) ?? branchCards[0],
     [selectedBranch],
   )
 
+  const branchContent = useMemo(() => portalData[selectedBranch as BranchKey], [portalData, selectedBranch])
+  const adminContent = portalData[adminBranch]
+  const portalStats = useMemo(
+    () => [
+      { label: 'Materials', value: String(Object.values(portalData).reduce((count, branch) => count + branch.materials.length, 0)) },
+      { label: 'Branches', value: '4' },
+      { label: 'Updates', value: String(Object.values(portalData).reduce((count, branch) => count + branch.updates.length, 0)) },
+      { label: 'Semesters', value: '8' },
+    ],
+    [portalData],
+  )
+
   const sectionTabs = sectionsByBranch[selectedBranch] ?? []
+
+  const savePortalBranch = (branch: BranchKey, update: (content: BranchContent) => BranchContent) => {
+    setPortalData((state) => ({
+      ...state,
+      [branch]: update(state[branch]),
+    }))
+  }
+
+  const addMaterial = () => {
+    if (!materialDraft.title.trim() || !materialDraft.detail.trim()) return
+    savePortalBranch(adminBranch, (content) => ({
+      ...content,
+      materials: [
+        { id: createPortalId('material'), title: materialDraft.title.trim(), type: materialDraft.type.trim() || 'Notes', meta: materialDraft.meta.trim() || 'Sem 1', detail: materialDraft.detail.trim() },
+        ...content.materials,
+      ],
+    }))
+    setMaterialDraft({ title: '', type: 'Notes', meta: 'Sem 1', detail: '' })
+    setFeedback('Material saved locally.')
+  }
+
+  const addUpdate = () => {
+    if (!updateDraft.title.trim() || !updateDraft.detail.trim()) return
+    savePortalBranch(adminBranch, (content) => ({
+      ...content,
+      updates: [
+        { id: createPortalId('update'), title: updateDraft.title.trim(), detail: updateDraft.detail.trim() },
+        ...content.updates,
+      ],
+    }))
+    setUpdateDraft({ title: '', detail: '' })
+    setFeedback('Announcement posted locally.')
+  }
+
+  const addSchedule = () => {
+    if (!scheduleDraft.subject.trim() || !scheduleDraft.room.trim()) return
+    savePortalBranch(adminBranch, (content) => ({
+      ...content,
+      schedule: [
+        { id: createPortalId('slot'), day: scheduleDraft.day, time: scheduleDraft.time.trim(), subject: scheduleDraft.subject.trim(), room: scheduleDraft.room.trim() },
+        ...content.schedule,
+      ],
+    }))
+    setScheduleDraft({ day: 'Mon', time: '09:00 - 10:00', subject: '', room: '' })
+    setFeedback('Timetable slot saved locally.')
+  }
+
+  const resetBranch = () => {
+    setPortalData((state) => ({
+      ...state,
+      [adminBranch]: createDefaultPortalContent()[adminBranch],
+    }))
+    setFeedback(`Restored ${adminBranch} to defaults.`)
+  }
 
   return (
     <PortalShell onOpenAdmin={() => setAdminOpen(true)}>
@@ -192,9 +377,9 @@ export default function PortalPage() {
                   <h1 className="text-4xl font-black tracking-tight text-white sm:text-6xl">{branchInfo.key}</h1>
                   <p className="mt-2 text-lg text-slate-400">{branchInfo.full}</p>
                   <div className="mt-6 flex flex-wrap gap-3 text-sm text-slate-300">
-                    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2"><BookOpen className="h-4 w-4 text-indigo-300" /> 0 Materials</span>
-                    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2"><CalendarDays className="h-4 w-4 text-violet-300" /> 0 Timetables</span>
-                    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2"><Bell className="h-4 w-4 text-sky-300" /> 0 Updates</span>
+                    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2"><BookOpen className="h-4 w-4 text-indigo-300" /> {branchContent.materials.length} Materials</span>
+                    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2"><CalendarDays className="h-4 w-4 text-violet-300" /> {branchContent.schedule.length} Timetables</span>
+                    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2"><Bell className="h-4 w-4 text-sky-300" /> {branchContent.updates.length} Updates</span>
                   </div>
                 </div>
 
@@ -213,15 +398,50 @@ export default function PortalPage() {
                 <div className="grid gap-6 lg:grid-cols-3">
                   <section className="lg:col-span-3">
                     <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-white"><BookOpen className="h-5 w-5 text-indigo-300" /> Study Materials</h2>
-                    <EmptyState icon={FolderOpen} title="No materials available" description="The admin hasn't uploaded anything here yet." />
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {branchContent.materials.map((material) => (
+                        <GlassCard key={material.title} className="p-5">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-xs uppercase tracking-[0.28em] text-indigo-300/80">{material.meta}</p>
+                              <h3 className="mt-2 text-lg font-bold text-white">{material.title}</h3>
+                            </div>
+                            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-300">{material.type}</span>
+                          </div>
+                          <p className="mt-3 text-sm leading-6 text-slate-400">{material.detail}</p>
+                        </GlassCard>
+                      ))}
+                    </div>
                   </section>
                   <section className="lg:col-span-3">
                     <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-white"><CalendarDays className="h-5 w-5 text-violet-300" /> Timetables</h2>
-                    <EmptyState icon={CalendarOff} title="No timetables available" description="Check back later or contact admin." />
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {branchContent.schedule.map((slot) => (
+                        <GlassCard key={`${slot.day}-${slot.time}-${slot.subject}`} className="p-5">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-lg font-bold text-white">{slot.subject}</p>
+                            <span className="rounded-full border border-violet-400/20 bg-violet-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-violet-200">{slot.day}</span>
+                          </div>
+                          <p className="mt-3 text-sm text-slate-400">{slot.time} • {slot.room}</p>
+                        </GlassCard>
+                      ))}
+                    </div>
                   </section>
                   <section className="lg:col-span-3">
                     <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-white"><Bell className="h-5 w-5 text-sky-300" /> Updates &amp; Announcements</h2>
-                    <EmptyState icon={MessageSquareWarning} title="No updates available" description="No announcements have been posted for this branch yet." />
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {branchContent.updates.map((update) => (
+                        <GlassCard key={update.title} className="p-5">
+                          <div className="flex items-center gap-3">
+                            <div className="grid h-10 w-10 place-items-center rounded-2xl bg-sky-500/10 text-sky-300">
+                              <MessageSquareWarning className="h-4 w-4" />
+                            </div>
+                            <h3 className="text-lg font-bold text-white">{update.title}</h3>
+                          </div>
+                          <p className="mt-3 text-sm leading-6 text-slate-400">{update.detail}</p>
+                        </GlassCard>
+                      ))}
+                    </div>
                   </section>
                 </div>
               </GlassCard>
@@ -233,19 +453,19 @@ export default function PortalPage() {
       <AnimatePresence>
         {adminOpen ? (
           <motion.div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/90 px-4 py-6 backdrop-blur-xl" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <GlassCard className="max-h-[90vh] w-full max-w-4xl overflow-hidden">
-              <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.03] px-5 py-4 sm:px-6">
-                <div className="flex items-center gap-3">
-                  <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600"><Shield className="h-5 w-5 text-white" /></div>
-                  <div>
-                    <h3 className="text-lg font-bold text-white">Admin Control Panel</h3>
-                    <p className="text-xs text-slate-400">Manage all portal content</p>
+              <GlassCard className="max-h-[90vh] w-full max-w-4xl overflow-hidden">
+                <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.03] px-5 py-4 sm:px-6">
+                  <div className="flex items-center gap-3">
+                    <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600"><Shield className="h-5 w-5 text-white" /></div>
+                    <div>
+                      <h3 className="text-lg font-bold text-white">Admin Control Panel</h3>
+                      <p className="text-xs text-slate-400">Manage all portal content, stored in this browser</p>
+                    </div>
                   </div>
+                  <button onClick={() => setAdminOpen(false)} className="rounded-xl border border-white/10 bg-white/5 p-2 text-slate-300">
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
-                <button onClick={() => setAdminOpen(false)} className="rounded-xl border border-white/10 bg-white/5 p-2 text-slate-300">
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
 
               <div className="flex gap-2 overflow-x-auto border-b border-white/10 px-5 py-3 sm:px-6">
                 {adminTabs.map((tab) => {
@@ -260,40 +480,149 @@ export default function PortalPage() {
               </div>
 
               <div className="max-h-[70vh] overflow-y-auto px-5 py-5 sm:px-6">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-300">
+                  <p>Editing branch <span className="font-semibold text-white">{adminBranch}</span></p>
+                  <select
+                    value={adminBranch}
+                    onChange={(event) => setAdminBranch(event.target.value as BranchKey)}
+                    className="rounded-2xl border border-white/10 bg-slate-950/60 px-3 py-2 text-sm text-white outline-none"
+                  >
+                    {branchCards.map((branch) => (
+                      <option key={branch.key} value={branch.key}>{branch.key}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {feedback ? <div className="mb-4 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">{feedback}</div> : null}
+
                 {adminTab === 'manage' ? (
-                  <EmptyState icon={FolderOpen} title="No content uploaded yet." description="Use the upload tabs to add study materials, updates, or timetables." />
-                ) : (
+                  <div className="space-y-4">
+                    <div className="grid gap-4 md:grid-cols-3">
+                      <GlassCard className="p-4">
+                        <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Materials</p>
+                        <p className="mt-2 text-3xl font-black text-white">{adminContent.materials.length}</p>
+                      </GlassCard>
+                      <GlassCard className="p-4">
+                        <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Timetable slots</p>
+                        <p className="mt-2 text-3xl font-black text-white">{adminContent.schedule.length}</p>
+                      </GlassCard>
+                      <GlassCard className="p-4">
+                        <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Updates</p>
+                        <p className="mt-2 text-3xl font-black text-white">{adminContent.updates.length}</p>
+                      </GlassCard>
+                    </div>
+                    <div className="grid gap-4 lg:grid-cols-3">
+                      <GlassCard className="p-4 lg:col-span-1">
+                        <div className="mb-3 flex items-center justify-between">
+                          <p className="text-sm font-semibold text-white">Materials</p>
+                          <button type="button" onClick={resetBranch} className="text-xs font-semibold text-indigo-300 hover:text-indigo-200">Reset branch</button>
+                        </div>
+                        <div className="space-y-3">
+                          {adminContent.materials.map((item) => (
+                            <div key={item.id} className="rounded-2xl border border-white/10 bg-slate-950/40 p-3">
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <p className="font-semibold text-white">{item.title}</p>
+                                  <p className="text-xs text-slate-400">{item.type} • {item.meta}</p>
+                                </div>
+                                <button type="button" onClick={() => savePortalBranch(adminBranch, (content) => ({ ...content, materials: content.materials.filter((entry) => entry.id !== item.id) }))} className="text-xs font-semibold text-rose-300 hover:text-rose-200">Remove</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </GlassCard>
+                      <GlassCard className="p-4 lg:col-span-1">
+                        <p className="mb-3 text-sm font-semibold text-white">Timetable</p>
+                        <div className="space-y-3">
+                          {adminContent.schedule.map((item) => (
+                            <div key={item.id} className="rounded-2xl border border-white/10 bg-slate-950/40 p-3">
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <p className="font-semibold text-white">{item.subject}</p>
+                                  <p className="text-xs text-slate-400">{item.day} • {item.time} • {item.room}</p>
+                                </div>
+                                <button type="button" onClick={() => savePortalBranch(adminBranch, (content) => ({ ...content, schedule: content.schedule.filter((entry) => entry.id !== item.id) }))} className="text-xs font-semibold text-rose-300 hover:text-rose-200">Remove</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </GlassCard>
+                      <GlassCard className="p-4 lg:col-span-1">
+                        <p className="mb-3 text-sm font-semibold text-white">Updates</p>
+                        <div className="space-y-3">
+                          {adminContent.updates.map((item) => (
+                            <div key={item.id} className="rounded-2xl border border-white/10 bg-slate-950/40 p-3">
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <p className="font-semibold text-white">{item.title}</p>
+                                  <p className="text-xs text-slate-400">{item.detail}</p>
+                                </div>
+                                <button type="button" onClick={() => savePortalBranch(adminBranch, (content) => ({ ...content, updates: content.updates.filter((entry) => entry.id !== item.id) }))} className="text-xs font-semibold text-rose-300 hover:text-rose-200">Remove</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </GlassCard>
+                    </div>
+                  </div>
+                ) : adminTab === 'upload' ? (
                   <div className="grid gap-4 sm:grid-cols-2">
                     <label className="space-y-2 text-sm text-slate-300">
-                      <span className="block text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Branch *</span>
-                      <div className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3">CSE</div>
-                    </label>
-                    <label className="space-y-2 text-sm text-slate-300">
-                      <span className="block text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Section *</span>
-                      <div className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3">Select Section</div>
-                    </label>
-                    <label className="space-y-2 text-sm text-slate-300">
-                      <span className="block text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Semester *</span>
-                      <div className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3">Semester 1</div>
+                      <span className="block text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Title *</span>
+                      <input value={materialDraft.title} onChange={(event) => setMaterialDraft((draft) => ({ ...draft, title: event.target.value }))} className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-white outline-none" placeholder="Data Structures Unit 1" />
                     </label>
                     <label className="space-y-2 text-sm text-slate-300">
                       <span className="block text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Type *</span>
-                      <div className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3">Notes</div>
+                      <input value={materialDraft.type} onChange={(event) => setMaterialDraft((draft) => ({ ...draft, type: event.target.value }))} className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-white outline-none" placeholder="Notes" />
                     </label>
+                    <label className="space-y-2 text-sm text-slate-300">
+                      <span className="block text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Semester *</span>
+                      <input value={materialDraft.meta} onChange={(event) => setMaterialDraft((draft) => ({ ...draft, meta: event.target.value }))} className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-white outline-none" placeholder="Sem 1" />
+                    </label>
+                    <label className="space-y-2 text-sm text-slate-300 sm:col-span-2">
+                      <span className="block text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Description *</span>
+                      <textarea value={materialDraft.detail} onChange={(event) => setMaterialDraft((draft) => ({ ...draft, detail: event.target.value }))} rows={4} className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-white outline-none" placeholder="Short summary students can scan quickly." />
+                    </label>
+                    <button type="button" onClick={addMaterial} className="sm:col-span-2 inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-500 px-4 py-3 font-semibold text-white">
+                      <Upload className="h-4 w-4" /> Save material locally
+                    </button>
+                  </div>
+                ) : adminTab === 'update' ? (
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <label className="space-y-2 text-sm text-slate-300 sm:col-span-2">
                       <span className="block text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Title *</span>
-                      <div className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3">Data Structures Unit 1 Notes</div>
+                      <input value={updateDraft.title} onChange={(event) => setUpdateDraft((draft) => ({ ...draft, title: event.target.value }))} className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-white outline-none" placeholder="Class shifted to Lab-2" />
                     </label>
                     <label className="space-y-2 text-sm text-slate-300 sm:col-span-2">
-                      <span className="block text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Description</span>
-                      <div className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3">Brief description...</div>
+                      <span className="block text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Announcement *</span>
+                      <textarea value={updateDraft.detail} onChange={(event) => setUpdateDraft((draft) => ({ ...draft, detail: event.target.value }))} rows={4} className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-white outline-none" placeholder="Write a short announcement students can act on." />
                     </label>
-                    <label className="space-y-2 text-sm text-slate-300 sm:col-span-2">
-                      <span className="block text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Resource Link *</span>
-                      <div className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3">https://drive.google.com/...</div>
+                    <button type="button" onClick={addUpdate} className="sm:col-span-2 inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-500 px-4 py-3 font-semibold text-white">
+                      <Upload className="h-4 w-4" /> Post announcement locally
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="space-y-2 text-sm text-slate-300">
+                      <span className="block text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Day *</span>
+                      <select value={scheduleDraft.day} onChange={(event) => setScheduleDraft((draft) => ({ ...draft, day: event.target.value }))} className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-white outline-none">
+                        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => <option key={day} value={day}>{day}</option>)}
+                      </select>
                     </label>
-                    <button className="sm:col-span-2 inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-500 px-4 py-3 font-semibold text-white">
-                      <Upload className="h-4 w-4" /> {adminTab === 'timetable' ? 'Upload Timetable' : adminTab === 'update' ? 'Post Update' : 'Upload Material'}
+                    <label className="space-y-2 text-sm text-slate-300">
+                      <span className="block text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Time *</span>
+                      <input value={scheduleDraft.time} onChange={(event) => setScheduleDraft((draft) => ({ ...draft, time: event.target.value }))} className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-white outline-none" placeholder="09:00 - 10:00" />
+                    </label>
+                    <label className="space-y-2 text-sm text-slate-300">
+                      <span className="block text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Subject *</span>
+                      <input value={scheduleDraft.subject} onChange={(event) => setScheduleDraft((draft) => ({ ...draft, subject: event.target.value }))} className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-white outline-none" placeholder="DBMS" />
+                    </label>
+                    <label className="space-y-2 text-sm text-slate-300">
+                      <span className="block text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Room *</span>
+                      <input value={scheduleDraft.room} onChange={(event) => setScheduleDraft((draft) => ({ ...draft, room: event.target.value }))} className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-white outline-none" placeholder="C-204" />
+                    </label>
+                    <button type="button" onClick={addSchedule} className="sm:col-span-2 inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-500 px-4 py-3 font-semibold text-white">
+                      <Upload className="h-4 w-4" /> Save timetable slot locally
                     </button>
                   </div>
                 )}
