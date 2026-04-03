@@ -39,6 +39,11 @@ const defaultState = () => ({
   theme: 'dark',
   soundEnabled: true,
   quoteIndex: 0,
+  appearance: {
+    accent: 'ocean',
+    density: 'roomy',
+    liquid: 'flow',
+  },
   lastActiveDate: '',
   streak: 1,
   tasks: structuredClone(DEFAULT_TASKS),
@@ -50,6 +55,16 @@ const defaultState = () => ({
     remaining: 25 * 60,
     running: false,
   },
+  focusSession: {
+    duration: 25 * 60,
+    remaining: 25 * 60,
+    running: false,
+  },
+    focusSettings: {
+      hours: 0,
+      minutes: 25,
+      seconds: 0,
+    },
 })
 
 const app = document.getElementById('app')
@@ -85,10 +100,14 @@ app.innerHTML = `
           <button type="button" class="ghost-button" data-scroll="#schedulePanel">Open timetable</button>
         </div>
       </div>
-      <div class="quote-card surface">
-        <span class="quote-label">Motivation</span>
-        <p id="quoteText">Small progress is still progress.</p>
-        <small id="quoteAuthor">Student Life OS</small>
+      <div class="hero-visual">
+        <div class="liquid-orb orb-a"></div>
+        <div class="liquid-orb orb-b"></div>
+        <div class="quote-card surface">
+          <span class="quote-label">Motivation</span>
+          <p id="quoteText">Small progress is still progress.</p>
+          <small id="quoteAuthor">Student Life OS</small>
+        </div>
       </div>
     </section>
 
@@ -238,6 +257,45 @@ app.innerHTML = `
         </div>
 
         <div class="settings-list">
+          <div class="customize-grid">
+            <label>
+              <span>
+                <strong>Accent palette</strong>
+                <small>Change the liquid highlight color</small>
+              </span>
+              <select id="accentSelect">
+                <option value="ocean">Ocean</option>
+                <option value="aurora">Aurora</option>
+                <option value="plum">Plum</option>
+                <option value="sunrise">Sunrise</option>
+              </select>
+            </label>
+
+            <label>
+              <span>
+                <strong>Page density</strong>
+                <small>Choose how spacious the home feels</small>
+              </span>
+              <select id="densitySelect">
+                <option value="roomy">Roomy</option>
+                <option value="balanced">Balanced</option>
+                <option value="compact">Compact</option>
+              </select>
+            </label>
+
+            <label>
+              <span>
+                <strong>Liquid motion</strong>
+                <small>Controls the float animation intensity</small>
+              </span>
+              <select id="liquidSelect">
+                <option value="flow">Flow</option>
+                <option value="drift">Drift</option>
+                <option value="wave">Wave</option>
+              </select>
+            </label>
+          </div>
+
           <label class="toggle-row">
             <span>
               <strong>Dark mode</strong>
@@ -263,10 +321,26 @@ app.innerHTML = `
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <section class="focus-overlay" id="focusOverlay" hidden>
+    <button type="button" class="focus-exit-floating" id="focusExitFloatingBtn">Exit focus</button>
     <div class="focus-card glass">
+      <button type="button" class="focus-close" id="focusCloseBtn" aria-label="Close focus mode">×</button>
       <span class="quote-label">Focus mode</span>
       <h2>Distraction-free session</h2>
       <p id="focusOverlayText">Everything you need is reduced to one calm view.</p>
+      <div class="focus-duration">
+        <label>
+          <span>Hours</span>
+          <input id="focusHours" type="number" min="0" max="12" value="0" />
+        </label>
+        <label>
+          <span>Minutes</span>
+          <input id="focusMinutes" type="number" min="0" max="59" value="25" />
+        </label>
+        <label>
+          <span>Seconds</span>
+          <input id="focusSeconds" type="number" min="0" max="59" value="0" />
+        </label>
+      </div>
       <div class="focus-stats">
         <div>
           <span>Timer</span>
@@ -277,10 +351,21 @@ app.innerHTML = `
           <strong id="focusOverlayTasks">0</strong>
         </div>
       </div>
+      <div class="timer-actions">
+        <button type="button" class="primary-button" id="focusStartBtn">Start focus</button>
+        <button type="button" class="ghost-button" id="focusPauseBtn">Pause</button>
+      </div>
       <button type="button" class="primary-button" id="exitFocusBtn">Exit focus mode</button>
     </div>
   </section>
 `
+
+const focusExitBanner = document.createElement('button')
+focusExitBanner.type = 'button'
+focusExitBanner.className = 'focus-exit-banner'
+focusExitBanner.textContent = 'Exit focus mode'
+focusExitBanner.hidden = true
+document.body.append(focusExitBanner)
 
 const state = loadState()
 
@@ -295,6 +380,9 @@ const els = {
   themeBtn: document.getElementById('themeBtn'),
   themeSwitch: document.getElementById('themeSwitch'),
   soundSwitch: document.getElementById('soundSwitch'),
+  accentSelect: document.getElementById('accentSelect'),
+  densitySelect: document.getElementById('densitySelect'),
+  liquidSelect: document.getElementById('liquidSelect'),
   taskForm: document.getElementById('taskForm'),
   taskId: document.getElementById('taskId'),
   taskTitle: document.getElementById('taskTitle'),
@@ -330,10 +418,19 @@ const els = {
   focusOverlayText: document.getElementById('focusOverlayText'),
   focusOverlayTimer: document.getElementById('focusOverlayTimer'),
   focusOverlayTasks: document.getElementById('focusOverlayTasks'),
+  focusHours: document.getElementById('focusHours'),
+  focusMinutes: document.getElementById('focusMinutes'),
+  focusSeconds: document.getElementById('focusSeconds'),
+  focusStartBtn: document.getElementById('focusStartBtn'),
+  focusPauseBtn: document.getElementById('focusPauseBtn'),
+  focusCloseBtn: document.getElementById('focusCloseBtn'),
+  focusExitFloatingBtn: document.getElementById('focusExitFloatingBtn'),
   exitFocusBtn: document.getElementById('exitFocusBtn'),
+  focusExitBanner,
 }
 
 let timerInterval = null
+let focusInterval = null
 let audioContext = null
 
 registerActiveDay()
@@ -357,6 +454,9 @@ function setupEvents() {
   els.themeBtn.addEventListener('click', toggleTheme)
   els.themeSwitch.addEventListener('click', toggleTheme)
   els.soundSwitch.addEventListener('click', toggleSound)
+  els.accentSelect.addEventListener('change', updateAppearance)
+  els.densitySelect.addEventListener('change', updateAppearance)
+  els.liquidSelect.addEventListener('change', updateAppearance)
 
   els.taskForm.addEventListener('submit', handleTaskSubmit)
   els.taskCancelBtn.addEventListener('click', clearTaskForm)
@@ -364,6 +464,15 @@ function setupEvents() {
 
   els.timerToggleBtn.addEventListener('click', toggleTimer)
   els.timerResetBtn.addEventListener('click', () => resetTimer())
+
+  els.focusStartBtn.addEventListener('click', startFocusSession)
+  els.focusPauseBtn.addEventListener('click', pauseFocusSession)
+  bindExitControl(els.focusCloseBtn)
+  bindExitControl(els.focusExitFloatingBtn)
+  bindExitControl(els.focusExitBanner)
+  els.focusHours.addEventListener('input', syncFocusDurationFromInputs)
+  els.focusMinutes.addEventListener('input', syncFocusDurationFromInputs)
+  els.focusSeconds.addEventListener('input', syncFocusDurationFromInputs)
 
   els.notesInput.addEventListener('input', handleNotesInput)
   els.resetBtn.addEventListener('click', resetAllData)
@@ -379,7 +488,23 @@ function setupEvents() {
     if (event.key === 'Escape') exitFocusMode()
   })
 
+  els.focusOverlay.addEventListener('click', (event) => {
+    if (event.target === els.focusOverlay) exitFocusMode()
+  })
+
   window.addEventListener('beforeunload', saveState)
+}
+
+function bindExitControl(element) {
+  const handler = (event) => {
+    event.preventDefault()
+    event.stopPropagation()
+    exitFocusMode()
+  }
+
+  element.addEventListener('click', handler)
+  element.addEventListener('pointerup', handler)
+  element.addEventListener('touchend', handler, { passive: false })
 }
 
 function loadState() {
@@ -421,6 +546,13 @@ function normalizeState(input) {
       remaining: Number.isFinite(input.timer?.remaining) ? input.timer.remaining : 25 * 60,
       running: Boolean(input.timer?.running),
     },
+    focusSession: {
+      duration: Number.isFinite(input.focusSession?.duration) ? input.focusSession.duration : 25 * 60,
+      remaining: Number.isFinite(input.focusSession?.remaining) ? input.focusSession.remaining : 25 * 60,
+      running: Boolean(input.focusSession?.running),
+    },
+    focusSettings: normalizeFocusSettings(input.focusSettings, input.focusSession?.duration),
+    appearance: normalizeAppearance(input.appearance),
     notes: String(input.notes ?? fallback.notes),
     theme: input.theme === 'light' ? 'light' : 'dark',
     soundEnabled: input.soundEnabled !== false,
@@ -452,10 +584,16 @@ function renderAll() {
 function renderTheme() {
   els.body.classList.toggle('theme-light', state.theme === 'light')
   els.body.classList.toggle('theme-dark', state.theme === 'dark')
+  els.body.dataset.accent = state.appearance.accent
+  els.body.dataset.density = state.appearance.density
+  els.body.dataset.liquid = state.appearance.liquid
   const pressed = state.theme === 'dark'
   els.themeSwitch.setAttribute('aria-pressed', String(pressed))
   els.soundSwitch.setAttribute('aria-pressed', String(state.soundEnabled))
   els.themeBtn.textContent = state.theme === 'dark' ? 'Light mode' : 'Dark mode'
+  els.accentSelect.value = state.appearance.accent
+  els.densitySelect.value = state.appearance.density
+  els.liquidSelect.value = state.appearance.liquid
 }
 
 function renderMotivation() {
@@ -639,8 +777,12 @@ function renderChart() {
 
 function renderFocusOverlay() {
   els.focusOverlayText.textContent = QUOTES[state.quoteIndex % QUOTES.length].text
-  els.focusOverlayTimer.textContent = formatDuration(state.timer.remaining)
+  const remaining = state.focusSession.running ? state.focusSession.remaining : state.focusSession.duration
+  els.focusOverlayTimer.textContent = formatHms(remaining)
   els.focusOverlayTasks.textContent = String(state.tasks.filter((task) => !task.completed).length)
+  setFocusInputsFromSettings(state.focusSettings)
+  els.focusStartBtn.textContent = state.focusSession.running ? 'Restart focus' : 'Start focus'
+  els.focusPauseBtn.textContent = state.focusSession.running ? 'Pause' : 'Reset'
 }
 
 function handleTaskSubmit(event) {
@@ -742,6 +884,16 @@ function toggleSound() {
   showToast(`Sound ${state.soundEnabled ? 'on' : 'off'}`)
 }
 
+function updateAppearance() {
+  state.appearance = {
+    accent: els.accentSelect.value,
+    density: els.densitySelect.value,
+    liquid: els.liquidSelect.value,
+  }
+  saveState()
+  renderTheme()
+}
+
 function syncTheme() {
   els.body.dataset.theme = state.theme
 }
@@ -824,19 +976,129 @@ function completeTimerPhase() {
 function enterFocusMode() {
   els.focusOverlay.hidden = false
   document.body.classList.add('focus-mode')
-  if (document.documentElement.requestFullscreen) {
-    document.documentElement.requestFullscreen().catch(() => {})
-  }
+  els.focusExitBanner.hidden = false
   renderFocusOverlay()
   showToast('Focus mode enabled')
 }
 
 function exitFocusMode() {
+  pauseFocusSession(true)
   els.focusOverlay.hidden = true
   document.body.classList.remove('focus-mode')
-  if (document.fullscreenElement && document.exitFullscreen) {
-    document.exitFullscreen().catch(() => {})
+  els.focusExitBanner.hidden = true
+}
+
+function syncFocusDurationFromInputs() {
+  const settings = readFocusSettings()
+  const duration = focusSettingsToSeconds(settings)
+  state.focusSettings = settings
+  state.focusSession.duration = duration
+  if (!state.focusSession.running) {
+    state.focusSession.remaining = duration
   }
+  saveState()
+  renderFocusOverlay()
+}
+
+function startFocusSession() {
+  const settings = readFocusSettings()
+  const duration = focusSettingsToSeconds(settings)
+  state.focusSettings = settings
+  state.focusSession.duration = duration
+  state.focusSession.remaining = duration
+  state.focusSession.running = true
+  if (focusInterval) clearInterval(focusInterval)
+  focusInterval = window.setInterval(tickFocusSession, 1000)
+  saveState()
+  renderFocusOverlay()
+  showToast('Focus session started')
+}
+
+function pauseFocusSession(silent = false) {
+  state.focusSession.running = false
+  if (focusInterval) clearInterval(focusInterval)
+  focusInterval = null
+  if (!silent) showToast('Focus session paused')
+  saveState()
+  renderFocusOverlay()
+}
+
+function tickFocusSession() {
+  state.focusSession.remaining -= 1
+  if (state.focusSession.remaining <= 0) {
+    completeFocusSession()
+    return
+  }
+
+  saveState()
+  renderFocusOverlay()
+}
+
+function completeFocusSession() {
+  pauseFocusSession(true)
+  state.focusSession.remaining = state.focusSession.duration
+  bumpDailyStat('focusMinutes', Math.max(1, Math.ceil(state.focusSession.duration / 60)))
+  bumpDailyStat('focusSessions', 1)
+  playTone(660)
+  saveState()
+  renderAll()
+  showToast('Focus session complete')
+}
+
+function focusInputSeconds() {
+  return focusSettingsToSeconds(readFocusSettings())
+}
+
+function readFocusSettings() {
+  return {
+    hours: clampNumber(els.focusHours.value, 0, 12),
+    minutes: clampNumber(els.focusMinutes.value, 0, 59),
+    seconds: clampNumber(els.focusSeconds.value, 0, 59),
+  }
+}
+
+function normalizeFocusSettings(settings, fallbackDuration = 25 * 60) {
+  if (settings && typeof settings === 'object') {
+    return {
+      hours: clampNumber(settings.hours ?? 0, 0, 12),
+      minutes: clampNumber(settings.minutes ?? 25, 0, 59),
+      seconds: clampNumber(settings.seconds ?? 0, 0, 59),
+    }
+  }
+
+  return secondsToFocusSettings(fallbackDuration)
+}
+
+function normalizeAppearance(appearance) {
+  const allowedAccent = ['ocean', 'aurora', 'plum', 'sunrise']
+  const allowedDensity = ['roomy', 'balanced', 'compact']
+  const allowedLiquid = ['flow', 'drift', 'wave']
+
+  return {
+    accent: allowedAccent.includes(appearance?.accent) ? appearance.accent : 'ocean',
+    density: allowedDensity.includes(appearance?.density) ? appearance.density : 'roomy',
+    liquid: allowedLiquid.includes(appearance?.liquid) ? appearance.liquid : 'flow',
+  }
+}
+
+function secondsToFocusSettings(duration) {
+  const safeDuration = Math.max(5, Number(duration) || 0)
+  return {
+    hours: Math.floor(safeDuration / 3600),
+    minutes: Math.floor((safeDuration % 3600) / 60),
+    seconds: safeDuration % 60,
+  }
+}
+
+function focusSettingsToSeconds(settings) {
+  const total = settings.hours * 3600 + settings.minutes * 60 + settings.seconds
+  return Math.max(5, total)
+}
+
+function setFocusInputsFromSettings(settings) {
+  els.focusHours.value = String(settings.hours)
+  els.focusMinutes.value = String(settings.minutes)
+  els.focusSeconds.value = String(settings.seconds)
 }
 
 function resetAllData() {
@@ -845,6 +1107,8 @@ function resetAllData() {
   Object.assign(state, fresh)
   if (timerInterval) clearInterval(timerInterval)
   timerInterval = null
+  if (focusInterval) clearInterval(focusInterval)
+  focusInterval = null
   syncTheme()
   syncThemeSwitches()
   saveState()
@@ -951,6 +1215,19 @@ function formatDuration(seconds) {
   const minutes = String(Math.floor(seconds / 60)).padStart(2, '0')
   const secs = String(seconds % 60).padStart(2, '0')
   return `${minutes}:${secs}`
+}
+
+function formatHms(seconds) {
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const secs = seconds % 60
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+}
+
+function clampNumber(value, min, max) {
+  const parsed = Number.parseInt(value, 10)
+  if (!Number.isFinite(parsed)) return min
+  return Math.min(max, Math.max(min, parsed))
 }
 
 function escapeHtml(value) {
