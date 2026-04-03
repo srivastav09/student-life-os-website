@@ -139,6 +139,38 @@ body[data-period='night'] {
   --sky-b: rgba(97, 212, 255, 0.12);
 }
 
+body[data-focus-theme='ocean'] .focus-glow-a {
+  background: radial-gradient(circle, rgba(125, 165, 255, 0.24), transparent 68%);
+}
+
+body[data-focus-theme='aurora'] .focus-glow-a {
+  background: radial-gradient(circle, rgba(124, 240, 212, 0.24), transparent 68%);
+}
+
+body[data-focus-theme='plum'] .focus-glow-a {
+  background: radial-gradient(circle, rgba(203, 140, 255, 0.24), transparent 68%);
+}
+
+body[data-focus-theme='sunrise'] .focus-glow-a {
+  background: radial-gradient(circle, rgba(255, 179, 107, 0.24), transparent 68%);
+}
+
+body[data-focus-theme='ocean'] .focus-glow-b {
+  background: radial-gradient(circle, rgba(124, 240, 212, 0.2), transparent 68%);
+}
+
+body[data-focus-theme='aurora'] .focus-glow-b {
+  background: radial-gradient(circle, rgba(137, 255, 180, 0.2), transparent 68%);
+}
+
+body[data-focus-theme='plum'] .focus-glow-b {
+  background: radial-gradient(circle, rgba(255, 142, 207, 0.2), transparent 68%);
+}
+
+body[data-focus-theme='sunrise'] .focus-glow-b {
+  background: radial-gradient(circle, rgba(255, 111, 145, 0.2), transparent 68%);
+}
+
 body[data-liquid='drift'] {
   --float-speed: 20s;
   --float-distance: 16px;
@@ -995,10 +1027,6 @@ textarea {
   gap: 14px;
 }
 
-.focus-custom-grid {
-  margin-bottom: 12px;
-}
-
 .inline-actions {
   display: flex;
   gap: 10px;
@@ -1193,6 +1221,44 @@ textarea {
   margin: 14px 0 8px;
 }
 
+.focus-note {
+  margin-top: 8px;
+  color: var(--muted);
+}
+
+.focus-customize-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 14px 0 10px;
+}
+
+.focus-customize-grid label {
+  display: grid;
+  gap: 8px;
+}
+
+.focus-toggle-row {
+  margin-top: 10px;
+}
+
+.focus-duration {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.focus-duration label {
+  display: grid;
+  gap: 8px;
+}
+
+.focus-duration span {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
 .chip-button {
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -1256,6 +1322,11 @@ textarea {
   .focus-meta {
     grid-template-columns: 1fr;
   }
+
+  .focus-customize-grid,
+  .focus-duration {
+    grid-template-columns: 1fr;
+  }
 }
 
 .focus-close {
@@ -1270,23 +1341,6 @@ textarea {
   border-radius: 999px;
   font-size: 1.4rem;
   line-height: 1;
-}
-
-.focus-duration {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin: 18px 0;
-}
-
-.focus-duration label {
-  display: grid;
-  gap: 8px;
-}
-
-.focus-duration span {
-  font-size: 0.82rem;
-  color: var(--muted);
 }
 
 .focus-card h2 {

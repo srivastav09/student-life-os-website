@@ -60,6 +60,11 @@ const defaultState = () => ({
     remaining: 25 * 60,
     running: false,
   },
+  focusMode: {
+    theme: 'aurora',
+    alarm: 'peaceful',
+    autoBreak: true,
+  },
   mood: 'focused',
   energy: 72,
   focusSettings: {
@@ -325,35 +330,6 @@ app.innerHTML = `
         </div>
 
         <div class="settings-list">
-          <div class="customize-grid focus-custom-grid">
-            <label>
-              <span>
-                <strong>Focus hours</strong>
-                <small>Set your deep work preset</small>
-              </span>
-              <input id="focusPresetHours" type="number" min="0" max="12" value="0" />
-            </label>
-            <label>
-              <span>
-                <strong>Focus minutes</strong>
-                <small>Default focus length</small>
-              </span>
-              <input id="focusPresetMinutes" type="number" min="0" max="59" value="25" />
-            </label>
-            <label>
-              <span>
-                <strong>Focus seconds</strong>
-                <small>Fine-tune the timer</small>
-              </span>
-              <input id="focusPresetSeconds" type="number" min="0" max="59" value="0" />
-            </label>
-          </div>
-
-          <div class="inline-actions">
-            <button type="button" class="primary-button" id="saveFocusPresetBtn">Save focus preset</button>
-            <button type="button" class="ghost-button" id="startFocusPresetBtn">Start preset</button>
-          </div>
-
           <div class="customize-grid">
             <label>
               <span>
@@ -445,6 +421,7 @@ app.innerHTML = `
       <span class="quote-label">Focus mode</span>
       <h2>Distraction-free session</h2>
       <p id="focusOverlayText">Everything you need is reduced to one calm view.</p>
+      <p class="focus-note">Set the duration in Pomodoro, then tune the mode here.</p>
       <div class="focus-meta">
         <div>
           <span>Session</span>
@@ -459,6 +436,32 @@ app.innerHTML = `
           <strong id="focusStatusLabel">Ready</strong>
         </div>
       </div>
+      <div class="focus-customize-grid">
+        <label>
+          <span>Theme</span>
+          <select id="focusThemeSelect">
+            <option value="aurora">Aurora</option>
+            <option value="ocean">Ocean</option>
+            <option value="plum">Plum</option>
+            <option value="sunrise">Sunrise</option>
+          </select>
+        </label>
+        <label>
+          <span>Alarm</span>
+          <select id="focusAlarmSelect">
+            <option value="peaceful">Peaceful melody</option>
+            <option value="chime">Soft chime</option>
+            <option value="silent">Silent finish</option>
+          </select>
+        </label>
+      </div>
+      <label class="toggle-row focus-toggle-row">
+        <span>
+          <strong>Auto break</strong>
+          <small>Switch to break mode automatically after focus</small>
+        </span>
+        <button type="button" class="switch" id="focusAutoBreakSwitch" aria-pressed="true" aria-label="Toggle auto break"></button>
+      </label>
       <div class="focus-duration">
         <label>
           <span>Hours</span>
@@ -561,14 +564,12 @@ const els = {
   focusStatusLabel: document.getElementById('focusStatusLabel'),
   focusOverlayTimer: document.getElementById('focusOverlayTimer'),
   focusOverlayTasks: document.getElementById('focusOverlayTasks'),
+  focusThemeSelect: document.getElementById('focusThemeSelect'),
+  focusAlarmSelect: document.getElementById('focusAlarmSelect'),
+  focusAutoBreakSwitch: document.getElementById('focusAutoBreakSwitch'),
   focusHours: document.getElementById('focusHours'),
   focusMinutes: document.getElementById('focusMinutes'),
   focusSeconds: document.getElementById('focusSeconds'),
-  focusPresetHours: document.getElementById('focusPresetHours'),
-  focusPresetMinutes: document.getElementById('focusPresetMinutes'),
-  focusPresetSeconds: document.getElementById('focusPresetSeconds'),
-  saveFocusPresetBtn: document.getElementById('saveFocusPresetBtn'),
-  startFocusPresetBtn: document.getElementById('startFocusPresetBtn'),
   focusStartBtn: document.getElementById('focusStartBtn'),
   focusPauseBtn: document.getElementById('focusPauseBtn'),
   focusCloseBtn: document.getElementById('focusCloseBtn'),
@@ -629,6 +630,9 @@ function setupEvents() {
   bindExitControl(els.focusCloseBtn)
   bindExitControl(els.focusExitFloatingBtn)
   bindExitControl(els.focusExitBanner)
+  els.focusThemeSelect.addEventListener('change', updateFocusMode)
+  els.focusAlarmSelect.addEventListener('change', updateFocusMode)
+  els.focusAutoBreakSwitch.addEventListener('click', toggleAutoBreak)
   els.energySlider.addEventListener('input', handleEnergyChange)
   document.querySelectorAll('[data-mood]').forEach((button) => {
     button.addEventListener('click', () => setMood(button.dataset.mood))
@@ -644,11 +648,6 @@ function setupEvents() {
   els.focusHours.addEventListener('input', syncFocusDurationFromInputs)
   els.focusMinutes.addEventListener('input', syncFocusDurationFromInputs)
   els.focusSeconds.addEventListener('input', syncFocusDurationFromInputs)
-  els.focusPresetHours.addEventListener('input', syncFocusPresetFromInputs)
-  els.focusPresetMinutes.addEventListener('input', syncFocusPresetFromInputs)
-  els.focusPresetSeconds.addEventListener('input', syncFocusPresetFromInputs)
-  els.saveFocusPresetBtn.addEventListener('click', saveFocusPreset)
-  els.startFocusPresetBtn.addEventListener('click', startSavedFocusPreset)
   document.querySelectorAll('[data-focus-preset]').forEach((button) => {
     button.addEventListener('click', () => applyFocusPreset(Number(button.dataset.focusPreset)))
   })
@@ -734,6 +733,7 @@ function normalizeState(input) {
       remaining: Number.isFinite(input.focusSession?.remaining) ? input.focusSession.remaining : 25 * 60,
       running: Boolean(input.focusSession?.running),
     },
+    focusMode: normalizeFocusMode(input.focusMode),
     focusSettings: normalizeFocusSettings(input.focusSettings, input.focusSession?.duration),
     mood: ['calm', 'focused', 'stressed', 'tired'].includes(input.mood) ? input.mood : fallback.mood,
     energy: Number.isFinite(input.energy) ? Math.min(100, Math.max(0, input.energy)) : fallback.energy,
@@ -1121,10 +1121,13 @@ function renderFocusOverlay() {
   els.focusSessionLabel.textContent = formatHms(state.focusSession.duration)
   els.focusStatusLabel.textContent = state.focusSession.running ? 'In progress' : 'Ready'
   els.focusOverlayTasks.textContent = String(state.tasks.filter((task) => !task.completed).length)
+  els.focusThemeSelect.value = state.focusMode.theme
+  els.focusAlarmSelect.value = state.focusMode.alarm
+  els.focusAutoBreakSwitch.setAttribute('aria-pressed', String(state.focusMode.autoBreak))
   setFocusInputsFromSettings(state.focusSettings)
-  setFocusPresetInputsFromSettings(state.focusSettings)
   els.focusStartBtn.textContent = state.focusSession.running ? 'Restart focus' : 'Start focus'
   els.focusPauseBtn.textContent = state.focusSession.running ? 'Pause' : 'Reset'
+  document.body.dataset.focusTheme = state.focusMode.theme
 }
 
 function renderTaskHistory() {
@@ -1382,27 +1385,6 @@ function syncFocusDurationFromInputs() {
   renderFocusOverlay()
 }
 
-function syncFocusPresetFromInputs() {
-  state.focusSettings = readFocusPresetSettings()
-  saveState()
-  renderFocusOverlay()
-}
-
-function saveFocusPreset() {
-  const settings = readFocusPresetSettings()
-  state.focusSettings = settings
-  state.focusSession.duration = focusSettingsToSeconds(settings)
-  state.focusSession.remaining = state.focusSession.duration
-  saveState()
-  renderFocusOverlay()
-  showToast('Focus preset saved')
-}
-
-function startSavedFocusPreset() {
-  saveFocusPreset()
-  startFocusSession()
-}
-
 function applyFocusPreset(totalSeconds) {
   const settings = secondsToFocusSettings(totalSeconds)
   state.focusSettings = settings
@@ -1452,7 +1434,12 @@ function completeFocusSession() {
   state.focusSession.remaining = state.focusSession.duration
   bumpDailyStat('focusMinutes', Math.max(1, Math.ceil(state.focusSession.duration / 60)))
   bumpDailyStat('focusSessions', 1)
-  playPeacefulAlarm()
+  playFocusAlarm()
+  if (!state.focusMode.autoBreak) {
+    renderFocusOverlay()
+    showToast('Focus session complete')
+    return
+  }
   saveState()
   renderAll()
   showToast('Focus session complete')
@@ -1467,14 +1454,6 @@ function readFocusSettings() {
     hours: clampNumber(els.focusHours.value, 0, 12),
     minutes: clampNumber(els.focusMinutes.value, 0, 59),
     seconds: clampNumber(els.focusSeconds.value, 0, 59),
-  }
-}
-
-function readFocusPresetSettings() {
-  return {
-    hours: clampNumber(els.focusPresetHours.value, 0, 12),
-    minutes: clampNumber(els.focusPresetMinutes.value, 0, 59),
-    seconds: clampNumber(els.focusPresetSeconds.value, 0, 59),
   }
 }
 
@@ -1544,12 +1523,6 @@ function setFocusInputsFromSettings(settings) {
   els.focusSeconds.value = String(settings.seconds)
 }
 
-function setFocusPresetInputsFromSettings(settings) {
-  els.focusPresetHours.value = String(settings.hours)
-  els.focusPresetMinutes.value = String(settings.minutes)
-  els.focusPresetSeconds.value = String(settings.seconds)
-}
-
 function resetAllData() {
   if (!confirm('Reset all Student Life OS data?')) return
   const fresh = defaultState()
@@ -1565,6 +1538,29 @@ function resetAllData() {
   clearTaskForm()
   renderAll()
   showToast('All data reset')
+}
+
+function normalizeFocusMode(value) {
+  const allowedThemes = ['aurora', 'ocean', 'plum', 'sunrise']
+  const allowedAlarms = ['peaceful', 'chime', 'silent']
+  return {
+    theme: allowedThemes.includes(value?.theme) ? value.theme : 'aurora',
+    alarm: allowedAlarms.includes(value?.alarm) ? value.alarm : 'peaceful',
+    autoBreak: value?.autoBreak !== false,
+  }
+}
+
+function updateFocusMode() {
+  state.focusMode.theme = els.focusThemeSelect.value
+  state.focusMode.alarm = els.focusAlarmSelect.value
+  saveState()
+  renderFocusOverlay()
+}
+
+function toggleAutoBreak() {
+  state.focusMode.autoBreak = !state.focusMode.autoBreak
+  saveState()
+  renderFocusOverlay()
 }
 
 function registerActiveDay() {
@@ -1720,14 +1716,17 @@ function playTone(frequency = 523) {
   oscillator.stop(audioContext.currentTime + 0.32)
 }
 
-function playPeacefulAlarm() {
-  if (!state.soundEnabled) return
+function playFocusAlarm() {
+  if (!state.soundEnabled || state.focusMode.alarm === 'silent') return
   const AudioCtx = window.AudioContext || window.webkitAudioContext
   if (!AudioCtx) return
 
   audioContext ??= new AudioCtx()
   const start = audioContext.currentTime
-  const notes = [523.25, 659.25, 783.99, 659.25, 523.25]
+  const notes =
+    state.focusMode.alarm === 'chime'
+      ? [659.25, 783.99, 987.77]
+      : [523.25, 659.25, 783.99, 659.25, 523.25]
 
   notes.forEach((frequency, index) => {
     const noteStart = start + index * 0.24
