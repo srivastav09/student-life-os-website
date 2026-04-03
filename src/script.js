@@ -364,12 +364,28 @@ app.innerHTML = `
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <section class="focus-overlay" id="focusOverlay" hidden>
+    <div class="focus-glow focus-glow-a"></div>
+    <div class="focus-glow focus-glow-b"></div>
     <button type="button" class="focus-exit-floating" id="focusExitFloatingBtn">Exit focus</button>
     <div class="focus-card glass">
       <button type="button" class="focus-close" id="focusCloseBtn" aria-label="Close focus mode">×</button>
       <span class="quote-label">Focus mode</span>
       <h2>Distraction-free session</h2>
       <p id="focusOverlayText">Everything you need is reduced to one calm view.</p>
+      <div class="focus-meta">
+        <div>
+          <span>Session</span>
+          <strong id="focusSessionLabel">25:00</strong>
+        </div>
+        <div>
+          <span>Alarm</span>
+          <strong>Peaceful melody</strong>
+        </div>
+        <div>
+          <span>Status</span>
+          <strong id="focusStatusLabel">Ready</strong>
+        </div>
+      </div>
       <div class="focus-duration">
         <label>
           <span>Hours</span>
@@ -383,6 +399,12 @@ app.innerHTML = `
           <span>Seconds</span>
           <input id="focusSeconds" type="number" min="0" max="59" value="0" />
         </label>
+      </div>
+      <div class="focus-presets">
+        <button type="button" class="chip-button" data-focus-preset="900">15 min</button>
+        <button type="button" class="chip-button" data-focus-preset="1500">25 min</button>
+        <button type="button" class="chip-button" data-focus-preset="2700">45 min</button>
+        <button type="button" class="chip-button" data-focus-preset="3600">1 hour</button>
       </div>
       <div class="focus-stats">
         <div>
@@ -462,6 +484,8 @@ const els = {
   toast: document.getElementById('toast'),
   focusOverlay: document.getElementById('focusOverlay'),
   focusOverlayText: document.getElementById('focusOverlayText'),
+  focusSessionLabel: document.getElementById('focusSessionLabel'),
+  focusStatusLabel: document.getElementById('focusStatusLabel'),
   focusOverlayTimer: document.getElementById('focusOverlayTimer'),
   focusOverlayTasks: document.getElementById('focusOverlayTasks'),
   focusHours: document.getElementById('focusHours'),
@@ -532,6 +556,9 @@ function setupEvents() {
   els.focusPresetSeconds.addEventListener('input', syncFocusPresetFromInputs)
   els.saveFocusPresetBtn.addEventListener('click', saveFocusPreset)
   els.startFocusPresetBtn.addEventListener('click', startSavedFocusPreset)
+  document.querySelectorAll('[data-focus-preset]').forEach((button) => {
+    button.addEventListener('click', () => applyFocusPreset(Number(button.dataset.focusPreset)))
+  })
 
   els.notesInput.addEventListener('input', handleNotesInput)
   els.resetBtn.addEventListener('click', resetAllData)
@@ -857,6 +884,8 @@ function renderFocusOverlay() {
   els.focusOverlayText.textContent = QUOTES[state.quoteIndex % QUOTES.length].text
   const remaining = state.focusSession.running ? state.focusSession.remaining : state.focusSession.duration
   els.focusOverlayTimer.textContent = formatHms(remaining)
+  els.focusSessionLabel.textContent = formatHms(state.focusSession.duration)
+  els.focusStatusLabel.textContent = state.focusSession.running ? 'In progress' : 'Ready'
   els.focusOverlayTasks.textContent = String(state.tasks.filter((task) => !task.completed).length)
   setFocusInputsFromSettings(state.focusSettings)
   setFocusPresetInputsFromSettings(state.focusSettings)
@@ -1138,6 +1167,16 @@ function saveFocusPreset() {
 function startSavedFocusPreset() {
   saveFocusPreset()
   startFocusSession()
+}
+
+function applyFocusPreset(totalSeconds) {
+  const settings = secondsToFocusSettings(totalSeconds)
+  state.focusSettings = settings
+  state.focusSession.duration = totalSeconds
+  state.focusSession.remaining = totalSeconds
+  saveState()
+  renderFocusOverlay()
+  showToast(`Focus preset set to ${formatHms(totalSeconds)}`)
 }
 
 function startFocusSession() {

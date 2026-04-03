@@ -918,6 +918,32 @@ textarea {
   animation: gradientShift 12s ease infinite alternate;
 }
 
+.focus-glow {
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+  filter: blur(32px);
+  opacity: 0.75;
+}
+
+.focus-glow-a {
+  width: 26vw;
+  height: 26vw;
+  left: 10%;
+  top: 12%;
+  background: radial-gradient(circle, rgba(125, 165, 255, 0.22), transparent 68%);
+  animation: floatBlob 18s ease-in-out infinite;
+}
+
+.focus-glow-b {
+  width: 22vw;
+  height: 22vw;
+  right: 8%;
+  bottom: 12%;
+  background: radial-gradient(circle, rgba(124, 240, 212, 0.2), transparent 68%);
+  animation: floatBlob 20s ease-in-out infinite reverse;
+}
+
 .focus-overlay[hidden] {
   display: none !important;
 }
@@ -925,8 +951,48 @@ textarea {
 .focus-card {
   position: relative;
   width: min(720px, 100%);
-  padding: clamp(24px, 6vw, 44px);
+  padding: clamp(26px, 6vw, 46px);
   border-radius: 32px;
+}
+
+.focus-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0 12px;
+}
+
+.focus-meta > div {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(127, 145, 182, 0.08);
+}
+
+.focus-meta span,
+.focus-presets span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin-bottom: 6px;
+}
+
+.focus-meta strong {
+  font-size: 1rem;
+}
+
+.focus-presets {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 14px 0 8px;
+}
+
+.chip-button {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: rgba(127, 145, 182, 0.08);
+  color: var(--text);
 }
 
 .focus-exit-floating {
@@ -959,7 +1025,8 @@ textarea {
 
 .focus-exit-banner:hover,
 .focus-exit-floating:hover,
-.focus-close:hover {
+.focus-close:hover,
+.chip-button:hover {
   transform: translateY(-1px) scale(1.01);
 }
 
@@ -978,6 +1045,10 @@ textarea {
 
   .focus-card {
     padding-top: 56px;
+  }
+
+  .focus-meta {
+    grid-template-columns: 1fr;
   }
 }
 
