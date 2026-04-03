@@ -610,6 +610,7 @@ syncThemeSwitches()
 renderAll()
 forceCloseFocusMode()
 renderBuildStamp()
+closeCommandPalette()
 
 setupEvents()
 hideLoader()

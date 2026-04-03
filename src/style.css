@@ -473,6 +473,10 @@ img {
   padding-top: 12vh;
 }
 
+.command-palette[hidden] {
+  display: none !important;
+}
+
 .command-backdrop {
   position: absolute;
   inset: 0;
