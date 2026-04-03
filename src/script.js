@@ -58,6 +58,24 @@ const defaultState = () => ({
     remaining: 25 * 60,
     running: false,
   },
+  planner: [
+    {
+      id: makeId(),
+      title: 'Review maths formulas',
+      date: todayKey(),
+      time: '18:00',
+      notes: 'Focus on the final derivations.',
+      completed: false,
+    },
+    {
+      id: makeId(),
+      title: 'Library study block',
+      date: todayKey(),
+      time: '20:30',
+      notes: 'Carry notes and water.',
+      completed: false,
+    },
+  ],
   focusSession: {
     duration: 25 * 60,
     remaining: 25 * 60,
@@ -74,6 +92,26 @@ const defaultState = () => ({
     minutes: 25,
     seconds: 0,
   },
+  habits: [
+    {
+      id: makeId(),
+      label: 'Read 20 minutes',
+      doneDate: '',
+      streak: 4,
+    },
+    {
+      id: makeId(),
+      label: 'Drink 2 bottles of water',
+      doneDate: '',
+      streak: 2,
+    },
+    {
+      id: makeId(),
+      label: 'Review tomorrow plan',
+      doneDate: '',
+      streak: 5,
+    },
+  ],
   taskHistory: [],
   aiHistory: [],
 })
@@ -102,7 +140,7 @@ app.innerHTML = `
   </header>
 
   <main class="page">
-    <section class="hero-shell glass fade-up">
+    <section class="hero-shell glass fade-up" id="dashboardAnchor">
       <aside class="hero-sidebar">
         <div class="brand-stack">
           <div class="brand-mark large">S</div>
@@ -111,6 +149,16 @@ app.innerHTML = `
             <span>VisionOS-inspired student companion</span>
           </div>
         </div>
+
+        <nav class="sidebar-nav" aria-label="Sidebar navigation">
+          <button type="button" class="sidebar-link" data-scroll="#dashboardAnchor">Dashboard</button>
+          <button type="button" class="sidebar-link" data-scroll="#plannerPanel">Planner</button>
+          <button type="button" class="sidebar-link" data-scroll="#tasksPanel">Tasks</button>
+          <button type="button" class="sidebar-link" data-scroll="#notesPanel">Notes</button>
+          <button type="button" class="sidebar-link" data-scroll="#timerPanel">Timer</button>
+          <button type="button" class="sidebar-link" data-scroll="#habitsPanel">Habits</button>
+          <button type="button" class="sidebar-link" data-scroll="#settingsPanel">Settings</button>
+        </nav>
 
         <div class="hero-sidebar-card">
           <p class="eyebrow">Daily overview</p>
@@ -216,6 +264,42 @@ app.innerHTML = `
     </section>
 
     <section class="panel-grid">
+      <section class="panel glass fade-up delay-2" id="plannerPanel">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Planner</p>
+            <h2>Map the day with time</h2>
+          </div>
+          <span class="pill" id="plannerCountPill">0 items</span>
+        </div>
+
+        <form id="plannerForm" class="planner-form">
+          <input type="hidden" id="plannerId" />
+          <label>
+            <span>Title</span>
+            <input id="plannerTitle" type="text" placeholder="Study session" maxlength="80" required />
+          </label>
+          <label>
+            <span>Date</span>
+            <input id="plannerDate" type="date" required />
+          </label>
+          <label>
+            <span>Time</span>
+            <input id="plannerTime" type="time" required />
+          </label>
+          <label class="planner-notes">
+            <span>Notes</span>
+            <textarea id="plannerNotes" rows="3" placeholder="What should happen?"></textarea>
+          </label>
+          <div class="task-form-actions">
+            <button type="submit" class="primary-button" id="plannerSubmitBtn">Add plan</button>
+            <button type="button" class="ghost-button" id="plannerCancelBtn">Clear</button>
+          </div>
+        </form>
+
+        <div id="plannerList" class="task-list planner-list" aria-live="polite"></div>
+      </section>
+
       <section class="panel glass fade-up delay-2" id="tasksPanel">
         <div class="panel-header">
           <div>
@@ -319,6 +403,17 @@ app.innerHTML = `
         </div>
 
         <textarea id="notesInput" placeholder="Capture ideas, reminders, and next steps..."></textarea>
+      </section>
+
+      <section class="panel glass fade-up delay-5" id="habitsPanel">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Habit tracker</p>
+            <h2>Daily streaks</h2>
+          </div>
+          <span class="pill" id="habitStreakPill">0 active</span>
+        </div>
+        <div class="habit-grid" id="habitGrid"></div>
       </section>
 
       <section class="panel glass fade-up delay-5" id="schedulePanel">
@@ -577,6 +672,16 @@ const els = {
   taskCancelBtn: document.getElementById('taskCancelBtn'),
   taskList: document.getElementById('taskList'),
   taskCountPill: document.getElementById('taskCountPill'),
+  plannerForm: document.getElementById('plannerForm'),
+  plannerId: document.getElementById('plannerId'),
+  plannerTitle: document.getElementById('plannerTitle'),
+  plannerDate: document.getElementById('plannerDate'),
+  plannerTime: document.getElementById('plannerTime'),
+  plannerNotes: document.getElementById('plannerNotes'),
+  plannerSubmitBtn: document.getElementById('plannerSubmitBtn'),
+  plannerCancelBtn: document.getElementById('plannerCancelBtn'),
+  plannerList: document.getElementById('plannerList'),
+  plannerCountPill: document.getElementById('plannerCountPill'),
   tasksLeftStat: document.getElementById('tasksLeftStat'),
   tasksDoneStat: document.getElementById('tasksDoneStat'),
   nextClassStat: document.getElementById('nextClassStat'),
@@ -599,6 +704,8 @@ const els = {
   timerSettingStat: document.getElementById('timerSettingStat'),
   notesInput: document.getElementById('notesInput'),
   notesCount: document.getElementById('notesCount'),
+  habitGrid: document.getElementById('habitGrid'),
+  habitStreakPill: document.getElementById('habitStreakPill'),
   timetableGrid: document.getElementById('timetableGrid'),
   calendarGrid: document.getElementById('calendarGrid'),
   chartBars: document.getElementById('chartBars'),
@@ -674,6 +781,11 @@ function setupEvents() {
   els.taskCancelBtn.addEventListener('click', clearTaskForm)
   els.taskList.addEventListener('click', handleTaskListClick)
 
+  els.plannerForm.addEventListener('submit', handlePlannerSubmit)
+  els.plannerCancelBtn.addEventListener('click', clearPlannerForm)
+  els.plannerList.addEventListener('click', handlePlannerListClick)
+  els.habitGrid.addEventListener('click', handleHabitClick)
+
   els.timerToggleBtn.addEventListener('click', toggleTimer)
   els.timerApplyBtn.addEventListener('click', applyTimerDuration)
   els.timerResetBtn.addEventListener('click', () => resetTimer())
@@ -705,6 +817,9 @@ function setupEvents() {
   els.notesInput.addEventListener('input', handleNotesInput)
   els.clearTaskHistoryBtn.addEventListener('click', clearTaskHistory)
   els.resetBtn.addEventListener('click', resetAllData)
+
+  els.plannerDate.value = todayKey()
+  els.plannerTime.value = '09:00'
 
   document.querySelectorAll('[data-scroll]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -781,6 +896,9 @@ function normalizeState(input) {
       remaining: Number.isFinite(input.timer?.remaining) ? input.timer.remaining : (Number.isFinite(input.timer?.duration) ? Math.max(60, input.timer.duration) : 25 * 60),
       running: Boolean(input.timer?.running),
     },
+    planner: Array.isArray(input.planner)
+      ? input.planner.slice(0, 30).map(normalizePlannerItem).filter(Boolean)
+      : fallback.planner,
     focusSession: {
       duration: Number.isFinite(input.focusSession?.duration) ? input.focusSession.duration : 25 * 60,
       remaining: Number.isFinite(input.focusSession?.remaining) ? input.focusSession.remaining : 25 * 60,
@@ -789,6 +907,9 @@ function normalizeState(input) {
     focusMode: normalizeFocusMode(input.focusMode),
     focusSettings: normalizeFocusSettings(input.focusSettings, input.focusSession?.duration),
     appearance: normalizeAppearance(input.appearance),
+    habits: Array.isArray(input.habits)
+      ? input.habits.slice(0, 12).map(normalizeHabit).filter(Boolean)
+      : fallback.habits,
     taskHistory: Array.isArray(input.taskHistory) ? input.taskHistory.slice(0, 20).map(normalizeHistoryItem).filter(Boolean) : [],
     notes: String(input.notes ?? fallback.notes),
     theme: input.theme === 'light' ? 'light' : 'dark',
@@ -810,9 +931,11 @@ function renderAll() {
   renderMotivation()
   renderOverview()
   renderAdaptiveShell()
+  renderPlanner()
   renderTasks()
   renderTimer()
   renderNotes()
+  renderHabits()
   renderTimetable()
   renderCalendar()
   renderChart()
@@ -859,9 +982,14 @@ function renderOverview() {
   const focusMinutes = getTodayStats().focusMinutes
   const nextClass = getNextClass(now)
   const adaptive = getAdaptiveMode()
+  const upcomingPlan = [...state.planner]
+    .filter((plan) => !plan.completed)
+    .sort((a, b) => `${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`))[0]
 
   els.greeting.textContent = `${greeting}, student.`
-  els.heroSummary.textContent = adaptive.description
+  els.heroSummary.textContent = upcomingPlan
+    ? `${adaptive.description} Next up: ${upcomingPlan.title} at ${formatPlannerDate(upcomingPlan.date, upcomingPlan.time)}.`
+    : adaptive.description
   els.tasksLeftStat.textContent = String(openTasks)
   els.tasksDoneStat.textContent = `${completedToday} completed today`
   els.nextClassStat.textContent = nextClass.title
@@ -941,20 +1069,32 @@ function getAdaptiveMode() {
 function getTimelineItems() {
   const openTasks = state.tasks.filter((task) => !task.completed)
   const sorted = [...openTasks].sort((a, b) => Number(b.createdAt) - Number(a.createdAt))
+  const upcomingPlans = [...state.planner]
+    .filter((plan) => !plan.completed)
+    .sort((a, b) => `${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`))
   const overdue = sorted.filter((task) => Date.now() - Number(task.createdAt) > 3 * 24 * 60 * 60 * 1000)
   const nextTask = sorted[0]
   const laterTask = sorted[1]
+  const nextPlan = upcomingPlans[0]
 
   return [
     {
       kind: 'now',
-      title: nextTask ? nextTask.title : 'Nothing urgent',
-      detail: nextTask ? `Start ${nextTask.category.toLowerCase()} work now.` : 'Take a breath, then open your notes.',
+      title: nextPlan ? nextPlan.title : nextTask ? nextTask.title : 'Nothing urgent',
+      detail: nextPlan
+        ? `Scheduled for ${formatPlannerDate(nextPlan.date, nextPlan.time)}.`
+        : nextTask
+          ? `Start ${nextTask.category.toLowerCase()} work now.`
+          : 'Take a breath, then open your notes.',
     },
     {
       kind: 'next',
-      title: laterTask ? laterTask.title : 'Review block',
-      detail: laterTask ? `After that, move to ${laterTask.category.toLowerCase()}.` : 'Spend 10 minutes reviewing the day.',
+      title: nextTask ? nextTask.title : laterTask ? laterTask.title : 'Review block',
+      detail: nextTask
+        ? `After that, move to ${nextTask.category.toLowerCase()}.`
+        : laterTask
+          ? `After that, move to ${laterTask.category.toLowerCase()}.`
+          : 'Spend 10 minutes reviewing the day.',
     },
     {
       kind: 'later',
@@ -1020,6 +1160,55 @@ function renderTasks() {
         )
         .join('')
     : '<div class="empty-state">Add a task to get started.</div>'
+}
+
+function renderPlanner() {
+  const plans = [...state.planner].sort((a, b) => `${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`))
+  els.plannerCountPill.textContent = `${plans.length} item${plans.length === 1 ? '' : 's'}`
+  els.plannerList.innerHTML = plans.length
+    ? plans
+        .map((plan) => {
+          const isTodayPlan = plan.date === todayKey()
+          return `
+            <article class="task-item planner-item ${plan.completed ? 'done' : ''}">
+              <label class="task-check">
+                <input type="checkbox" data-action="toggle-plan" data-id="${plan.id}" ${plan.completed ? 'checked' : ''} />
+                <span>${escapeHtml(plan.title)}</span>
+              </label>
+              <div class="planner-meta">
+                <span class="category study">${escapeHtml(formatPlannerDate(plan.date, plan.time))}</span>
+                <span class="category priority ${plan.completed ? 'low' : isTodayPlan ? 'high' : 'medium'}">${plan.completed ? 'Done' : isTodayPlan ? 'Today' : 'Planned'}</span>
+                <div class="task-actions">
+                  <button type="button" class="icon-button" data-action="edit-plan" data-id="${plan.id}">Edit</button>
+                  <button type="button" class="icon-button danger" data-action="delete-plan" data-id="${plan.id}">Delete</button>
+                </div>
+              </div>
+              ${plan.notes ? `<p class="planner-notes-text">${escapeHtml(plan.notes)}</p>` : ''}
+            </article>
+          `
+        })
+        .join('')
+    : '<div class="empty-state">Add a plan to map your day.</div>'
+}
+
+function renderHabits() {
+  const today = todayKey()
+  const active = state.habits.filter((habit) => habit.doneDate === today).length
+  els.habitStreakPill.textContent = `${active} active`
+  els.habitGrid.innerHTML = state.habits
+    .map(
+      (habit) => `
+        <article class="habit-card ${habit.doneDate === today ? 'done' : ''}">
+          <div>
+            <p class="eyebrow">${habit.doneDate === today ? 'Completed today' : 'Daily habit'}</p>
+            <h3>${escapeHtml(habit.label)}</h3>
+            <p>${habit.streak} day streak</p>
+          </div>
+          <button type="button" class="habit-toggle" data-action="habit-toggle" data-id="${habit.id}">${habit.doneDate === today ? 'Undo' : 'Mark done'}</button>
+        </article>
+      `,
+    )
+    .join('')
 }
 
 function renderTimer() {
@@ -1313,6 +1502,111 @@ function clearTaskForm() {
   els.taskTitle.focus()
 }
 
+function handlePlannerSubmit(event) {
+  event.preventDefault()
+  const title = els.plannerTitle.value.trim()
+  const date = els.plannerDate.value
+  const time = els.plannerTime.value
+  const notes = els.plannerNotes.value.trim()
+
+  if (!title || !date || !time) return
+
+  const planId = els.plannerId.value
+  if (planId) {
+    const plan = state.planner.find((item) => item.id === planId)
+    if (plan) {
+      plan.title = title
+      plan.date = date
+      plan.time = time
+      plan.notes = notes
+    }
+    showToast('Planner item updated')
+  } else {
+    state.planner.unshift({
+      id: makeId(),
+      title,
+      date,
+      time,
+      notes,
+      completed: false,
+    })
+    showToast('Planner item added')
+  }
+
+  clearPlannerForm()
+  saveState()
+  renderAll()
+}
+
+function handlePlannerListClick(event) {
+  const button = event.target.closest('button, input[type="checkbox"]')
+  if (!button) return
+
+  const id = button.dataset.id
+  const plan = state.planner.find((item) => item.id === id)
+  if (!plan) return
+
+  const action = button.dataset.action
+  if (action === 'toggle-plan' || button.type === 'checkbox') {
+    plan.completed = button.checked
+  }
+
+  if (action === 'edit-plan') {
+    els.plannerId.value = plan.id
+    els.plannerTitle.value = plan.title
+    els.plannerDate.value = plan.date
+    els.plannerTime.value = plan.time
+    els.plannerNotes.value = plan.notes
+    els.plannerSubmitBtn.textContent = 'Save plan'
+    els.plannerTitle.focus()
+    return
+  }
+
+  if (action === 'delete-plan') {
+    state.planner = state.planner.filter((item) => item.id !== id)
+    showToast('Planner item deleted')
+  }
+
+  saveState()
+  renderAll()
+}
+
+function clearPlannerForm() {
+  els.plannerId.value = ''
+  els.plannerForm.reset()
+  els.plannerDate.value = todayKey()
+  els.plannerTime.value = '09:00'
+  els.plannerSubmitBtn.textContent = 'Add plan'
+  els.plannerTitle.focus()
+}
+
+function handleHabitClick(event) {
+  const button = event.target.closest('button[data-action="habit-toggle"]')
+  if (!button) return
+  const habit = state.habits.find((item) => item.id === button.dataset.id)
+  if (!habit) return
+  toggleHabit(habit.id)
+}
+
+function toggleHabit(id) {
+  const habit = state.habits.find((item) => item.id === id)
+  if (!habit) return
+  const today = todayKey()
+
+  if (habit.doneDate === today) {
+    habit.doneDate = ''
+  } else {
+    habit.doneDate = today
+    if (habit.lastDoneDate !== today) {
+      habit.streak += 1
+      habit.lastDoneDate = today
+    }
+  }
+
+  saveState()
+  renderHabits()
+}
+
 function toggleTheme() {
   state.theme = state.theme === 'dark' ? 'light' : 'dark'
   registerActiveDay()
@@ -1549,6 +1843,31 @@ function readFocusSettings() {
   }
 }
 
+function normalizePlannerItem(item) {
+  if (!item || typeof item !== 'object') return null
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(item.date) ? item.date : todayKey()
+  const time = /^\d{2}:\d{2}$/.test(item.time) ? item.time : '09:00'
+  return {
+    id: String(item.id ?? makeId()),
+    title: String(item.title ?? '').trim(),
+    date,
+    time,
+    notes: String(item.notes ?? '').trim(),
+    completed: Boolean(item.completed),
+  }
+}
+
+function normalizeHabit(item) {
+  if (!item || typeof item !== 'object') return null
+  return {
+    id: String(item.id ?? makeId()),
+    label: String(item.label ?? '').trim(),
+    doneDate: String(item.doneDate ?? ''),
+    lastDoneDate: String(item.lastDoneDate ?? item.doneDate ?? ''),
+    streak: Number.isFinite(item.streak) ? Math.max(0, item.streak) : 0,
+  }
+}
+
 function normalizeFocusSettings(settings, fallbackDuration = 25 * 60) {
   if (settings && typeof settings === 'object') {
     return {
@@ -1637,6 +1956,7 @@ function resetAllData() {
   syncThemeSwitches()
   saveState()
   clearTaskForm()
+  clearPlannerForm()
   renderAll()
   showToast('All data reset')
 }
@@ -1786,6 +2106,18 @@ function formatRelativeTime(iso) {
   if (minutes < 60) return `${minutes}m ago`
   const hours = Math.round(minutes / 60)
   return `${hours}h ago`
+}
+
+function formatPlannerDate(date, time) {
+  const parsed = new Date(`${date}T${time}`)
+  if (Number.isNaN(parsed.getTime())) return `${date} ${time}`
+  return new Intl.DateTimeFormat('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(parsed)
 }
 
 function clampNumber(value, min, max) {

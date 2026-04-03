@@ -357,6 +357,29 @@ img {
   background: rgba(127, 145, 182, 0.08);
 }
 
+.sidebar-nav {
+  display: grid;
+  gap: 8px;
+}
+
+.sidebar-link {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(127, 145, 182, 0.07);
+  color: var(--text);
+  text-align: left;
+  font-weight: 700;
+  transition: transform 180ms ease, background 180ms ease, border-color 180ms ease;
+}
+
+.sidebar-link:hover {
+  transform: translateX(4px);
+  background: rgba(125, 165, 255, 0.14);
+  border-color: rgba(125, 165, 255, 0.22);
+}
+
 .hero-actions-stack {
   display: grid;
   gap: 10px;
@@ -693,6 +716,8 @@ img {
 }
 
 #tasksPanel,
+#plannerPanel,
+#habitsPanel,
 #schedulePanel,
 #insightsPanel {
   grid-column: 1;
@@ -703,6 +728,11 @@ img {
 #settingsPanel,
 #historyPanel {
   grid-column: 2;
+}
+
+#plannerPanel,
+#habitsPanel {
+  grid-column: 1 / -1;
 }
 
 .panel-header {
@@ -772,7 +802,20 @@ img {
   margin-bottom: 18px;
 }
 
+.planner-form {
+  display: grid;
+  grid-template-columns: 1.1fr 0.7fr 0.7fr;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 18px;
+}
+
+.planner-notes {
+  grid-column: 1 / -1;
+}
+
 .task-form label,
+.planner-form label,
 .settings-list label {
   display: grid;
   gap: 8px;
@@ -919,6 +962,64 @@ textarea {
 .task-actions {
   display: flex;
   gap: 8px;
+}
+
+.planner-item {
+  border-color: rgba(125, 165, 255, 0.14);
+}
+
+.planner-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.planner-notes-text {
+  margin-top: 6px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.habit-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.habit-card {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border-radius: 22px;
+  background: rgba(127, 145, 182, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.habit-card.done {
+  border-color: rgba(124, 240, 212, 0.22);
+  background: linear-gradient(135deg, rgba(124, 240, 212, 0.12), rgba(125, 165, 255, 0.08));
+}
+
+.habit-card h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.habit-card p {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+
+.habit-toggle {
+  justify-self: start;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(125, 165, 255, 0.2);
+  background: rgba(125, 165, 255, 0.14);
+  color: var(--text);
+  font-weight: 700;
 }
 
 .icon-button {
@@ -1691,6 +1792,18 @@ textarea {
     grid-template-columns: 1fr;
   }
 
+  .planner-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .planner-notes {
+    grid-column: 1 / -1;
+  }
+
+  .habit-grid {
+    grid-template-columns: 1fr;
+  }
+
   #timerPanel,
   #notesPanel,
   #settingsPanel,
@@ -1805,6 +1918,18 @@ textarea {
 
   .command-panel {
     padding: 12px;
+  }
+
+  .planner-form {
+    grid-template-columns: 1fr;
+  }
+
+  .habit-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar-nav {
+    grid-template-columns: 1fr 1fr;
   }
 }
 
