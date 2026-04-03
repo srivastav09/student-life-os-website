@@ -1,0 +1,827 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Study Focus</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #08111f;
+      --bg2: #0d1730;
+      --surface: rgba(15, 24, 43, 0.78);
+      --surface-strong: rgba(20, 31, 55, 0.94);
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #eef3ff;
+      --muted: #a2afd0;
+      --accent: #7aa8ff;
+      --accent2: #7cf0d4;
+      --danger: #ff7d8d;
+      --shadow: 0 28px 70px rgba(0, 0, 0, 0.34);
+      --radius: 24px;
+    }
+
+    [data-theme="light"] {
+      color-scheme: light;
+      --bg: #f4f7fb;
+      --bg2: #eaf0f8;
+      --surface: rgba(255, 255, 255, 0.74);
+      --surface-strong: rgba(255, 255, 255, 0.95);
+      --border: rgba(8, 17, 31, 0.08);
+      --text: #0f1f36;
+      --muted: #5e6f8a;
+      --accent: #3c63ff;
+      --accent2: #19b79a;
+      --danger: #db5066;
+      --shadow: 0 24px 60px rgba(18, 34, 54, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(122, 168, 255, 0.18), transparent 24%),
+        radial-gradient(circle at top right, rgba(124, 240, 212, 0.12), transparent 20%),
+        linear-gradient(160deg, var(--bg), var(--bg2));
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: -20vh -10vw auto;
+      height: 60vh;
+      background: radial-gradient(circle, rgba(122, 168, 255, 0.12), transparent 70%);
+      filter: blur(40px);
+      pointer-events: none;
+    }
+
+    .app {
+      width: min(1120px, calc(100vw - 24px));
+      margin: 0 auto;
+      padding: 22px 0 40px;
+    }
+
+    .shell {
+      display: grid;
+      gap: 16px;
+    }
+
+    .topbar,
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(24px) saturate(160%);
+      -webkit-backdrop-filter: blur(24px) saturate(160%);
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 18px;
+      border-radius: 28px;
+      position: sticky;
+      top: 12px;
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mark {
+      width: 46px;
+      height: 46px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      color: white;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      box-shadow: 0 16px 32px rgba(57, 115, 255, 0.24);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 1rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand p {
+      margin: 2px 0 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button, input, textarea {
+      font: inherit;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 999px;
+      padding: 11px 15px;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.06);
+      transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease;
+      cursor: pointer;
+    }
+
+    .btn:hover { transform: translateY(-2px); background: rgba(255,255,255,0.1); }
+    .btn:active { transform: translateY(0) scale(0.98); }
+
+    .btn.primary {
+      color: white;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      box-shadow: 0 12px 26px rgba(60, 99, 255, 0.2);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 16px;
+    }
+
+    .hero {
+      padding: 22px;
+      border-radius: 28px;
+      background: linear-gradient(160deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)), var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .hero h2 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3.6rem);
+      letter-spacing: -0.06em;
+      line-height: 0.98;
+      background: linear-gradient(135deg, #fff 0%, var(--accent) 50%, var(--accent2) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero p {
+      max-width: 58ch;
+      color: var(--muted);
+      line-height: 1.6;
+      margin: 12px 0 0;
+    }
+
+    .hero-meta {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border-radius: 999px;
+      background: rgba(127, 145, 182, 0.12);
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .card {
+      border-radius: 26px;
+      padding: 18px;
+    }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .section-title h3 {
+      margin: 0;
+      font-size: 1.05rem;
+      letter-spacing: -0.03em;
+    }
+
+    .section-title span { color: var(--muted); font-size: 0.84rem; }
+
+    .timer-ring {
+      width: min(240px, 100%);
+      aspect-ratio: 1;
+      margin: 10px auto 0;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at center, rgba(255,255,255,0.08) 0 56%, transparent 58%),
+        conic-gradient(var(--accent) var(--progress, 0%), rgba(255,255,255,0.08) 0);
+      box-shadow: inset 0 0 0 10px rgba(255,255,255,0.03);
+    }
+
+    .timer-inner {
+      width: 74%;
+      height: 74%;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      background: var(--surface-strong);
+      border: 1px solid var(--border);
+      padding: 18px;
+    }
+
+    .timer-time {
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      letter-spacing: -0.06em;
+      line-height: 1;
+    }
+
+    .timer-state {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .timer-controls,
+    .form-row,
+    .list-tools {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .form {
+      display: grid;
+      gap: 10px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 13px 14px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--surface-strong);
+      color: var(--text);
+      outline: none;
+      transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+    }
+
+    input:focus, textarea:focus {
+      border-color: rgba(122, 168, 255, 0.55);
+      box-shadow: 0 0 0 4px rgba(122, 168, 255, 0.16);
+    }
+
+    textarea { min-height: 140px; resize: vertical; }
+
+    .list {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .item {
+      padding: 14px;
+      border-radius: 20px;
+      background: rgba(127, 145, 182, 0.08);
+      border: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .item.done {
+      opacity: 0.72;
+    }
+
+    .item h4 { margin: 0; font-size: 0.98rem; }
+    .item p { margin: 6px 0 0; color: var(--muted); font-size: 0.9rem; }
+    .item small { color: var(--muted); }
+
+    .item-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .stat {
+      padding: 16px;
+      border-radius: 22px;
+      background: rgba(127, 145, 182, 0.08);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .stat span { color: var(--muted); font-size: 0.82rem; }
+    .stat strong { display: block; margin-top: 8px; font-size: 1.4rem; letter-spacing: -0.04em; }
+
+    .progress {
+      margin-top: 12px;
+      width: 100%;
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(127, 145, 182, 0.14);
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      width: var(--value, 0%);
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width 260ms ease;
+    }
+
+    .theme-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    @media (max-width: 920px) {
+      .grid { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 640px) {
+      .app { width: min(100vw - 16px, 1120px); padding-top: 12px; }
+      .topbar { flex-direction: column; align-items: stretch; }
+      .top-actions { justify-content: stretch; }
+      .top-actions .btn { flex: 1; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body data-theme="dark">
+  <div class="app">
+    <header class="topbar card">
+      <div class="brand">
+        <div class="mark">SF</div>
+        <div>
+          <h1>Study Focus</h1>
+          <p>Minimal study system for focus, planning, and notes</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="btn theme-toggle" id="themeToggleBtn" type="button">Toggle theme</button>
+      </div>
+    </header>
+
+    <main class="shell" id="appRoot">
+      <section class="hero">
+        <h2>Stay focused.<br>Study with calm momentum.</h2>
+        <p>Pomodoro timer, timetable, tasks, notes, and lightweight analytics in one clean workspace. Everything is saved locally in your browser.</p>
+        <div class="hero-meta">
+          <span class="pill">25 min focus</span>
+          <span class="pill">LocalStorage saved</span>
+          <span class="pill">Light / Dark mode</span>
+        </div>
+      </section>
+
+      <div class="grid">
+        <section class="card" aria-labelledby="timerTitle">
+          <div class="section-title">
+            <div>
+              <h3 id="timerTitle">Pomodoro Timer</h3>
+              <span>Default 25 minutes focus</span>
+            </div>
+            <span id="sessionCountText">0 sessions</span>
+          </div>
+
+          <div class="timer-ring" id="timerRing" style="--progress: 0%">
+            <div class="timer-inner">
+              <div>
+                <p class="timer-time" id="timerDisplay">25:00</p>
+                <p class="timer-state" id="timerState">Ready to start</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="timer-controls" style="margin-top: 14px; justify-content: center;">
+            <button class="btn primary" type="button" id="startBtn">Start</button>
+            <button class="btn" type="button" id="pauseBtn">Pause</button>
+            <button class="btn" type="button" id="resetBtn">Reset</button>
+          </div>
+
+          <div class="progress" aria-label="Timer progress">
+            <div class="progress-bar" id="timerProgress"></div>
+          </div>
+          <p class="hint" style="margin: 10px 0 0;">Alert sound plays when the session ends.</p>
+        </section>
+
+        <section class="card" aria-labelledby="analyticsTitle">
+          <div class="section-title">
+            <div>
+              <h3 id="analyticsTitle">Study Analytics</h3>
+              <span>Simple daily progress</span>
+            </div>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat">
+              <span>Completed sessions</span>
+              <strong id="completedSessions">0</strong>
+            </div>
+            <div class="stat">
+              <span>Daily progress</span>
+              <strong id="dailyPercent">0%</strong>
+            </div>
+            <div class="stat">
+              <span>Tasks done</span>
+              <strong id="tasksDoneStat">0</strong>
+            </div>
+          </div>
+
+          <div class="progress" style="margin-top: 14px;">
+            <div class="progress-bar" id="dailyProgressBar"></div>
+          </div>
+          <p class="hint" style="margin: 10px 0 0;">Goal: 4 focus sessions per day.</p>
+        </section>
+      </div>
+
+      <div class="grid">
+        <section class="card" aria-labelledby="tasksTitle">
+          <div class="section-title">
+            <div>
+              <h3 id="tasksTitle">Task Manager</h3>
+              <span>Add, complete, and delete tasks</span>
+            </div>
+          </div>
+
+          <form class="form" id="taskForm">
+            <div class="form-grid">
+              <input id="taskInput" type="text" placeholder="Add a task" maxlength="120" required />
+              <button class="btn primary" type="submit">Add task</button>
+            </div>
+          </form>
+
+          <div class="list" id="taskList" aria-live="polite"></div>
+        </section>
+
+        <section class="card" aria-labelledby="scheduleTitle">
+          <div class="section-title">
+            <div>
+              <h3 id="scheduleTitle">Timetable</h3>
+              <span>Build your study schedule</span>
+            </div>
+          </div>
+
+          <form class="form" id="timetableForm">
+            <div class="form-grid">
+              <input id="subjectInput" type="text" placeholder="Subject" maxlength="80" required />
+              <input id="timeInput" type="text" placeholder="Time slot (e.g. 6:00 PM - 7:00 PM)" maxlength="80" required />
+            </div>
+            <button class="btn primary" type="submit">Add schedule</button>
+          </form>
+
+          <div class="list" id="timetableList" aria-live="polite"></div>
+        </section>
+      </div>
+
+      <div class="grid">
+        <section class="card" aria-labelledby="notesTitle">
+          <div class="section-title">
+            <div>
+              <h3 id="notesTitle">Notes</h3>
+              <span>Saved automatically</span>
+            </div>
+            <span class="hint" id="noteStatus">Saved locally</span>
+          </div>
+          <textarea id="notesInput" placeholder="Write your notes here..."></textarea>
+        </section>
+
+        <section class="card" aria-labelledby="helpTitle">
+          <div class="section-title">
+            <div>
+              <h3 id="helpTitle">Quick Tips</h3>
+              <span>Clean focus workflow</span>
+            </div>
+          </div>
+          <div class="list" style="margin-top: 0;">
+            <div class="item"><div><h4>Start with one task</h4><p>Keep the list short and actionable.</p></div></div>
+            <div class="item"><div><h4>Use the timer</h4><p>Work for 25 minutes, then take a break.</p></div></div>
+            <div class="item"><div><h4>Review daily progress</h4><p>Track completed sessions and stay consistent.</p></div></div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('App started');
+
+      try {
+        const STORAGE_KEY = 'study-focus-app-v1';
+        const GOAL_SESSIONS = 4;
+        let timerId = null;
+        let audioCtx = null;
+
+        const els = {
+          body: document.body,
+          themeToggleBtn: document.getElementById('themeToggleBtn'),
+          timerDisplay: document.getElementById('timerDisplay'),
+          timerState: document.getElementById('timerState'),
+          timerRing: document.getElementById('timerRing'),
+          timerProgress: document.getElementById('timerProgress'),
+          startBtn: document.getElementById('startBtn'),
+          pauseBtn: document.getElementById('pauseBtn'),
+          resetBtn: document.getElementById('resetBtn'),
+          sessionCountText: document.getElementById('sessionCountText'),
+          completedSessions: document.getElementById('completedSessions'),
+          dailyPercent: document.getElementById('dailyPercent'),
+          tasksDoneStat: document.getElementById('tasksDoneStat'),
+          dailyProgressBar: document.getElementById('dailyProgressBar'),
+          taskForm: document.getElementById('taskForm'),
+          taskInput: document.getElementById('taskInput'),
+          taskList: document.getElementById('taskList'),
+          timetableForm: document.getElementById('timetableForm'),
+          subjectInput: document.getElementById('subjectInput'),
+          timeInput: document.getElementById('timeInput'),
+          timetableList: document.getElementById('timetableList'),
+          notesInput: document.getElementById('notesInput'),
+          noteStatus: document.getElementById('noteStatus'),
+        };
+
+        if (!els.body || !els.timerDisplay || !els.taskList || !els.timetableList || !els.notesInput) {
+          console.error('Missing required elements');
+          return;
+        }
+
+        function safeParse(key, fallback) {
+          try {
+            const raw = localStorage.getItem(key);
+            if (!raw) return fallback;
+            return JSON.parse(raw) || fallback;
+          } catch {
+            return fallback;
+          }
+        }
+
+        function save(key, value) {
+          try { localStorage.setItem(key, JSON.stringify(value)); } catch (error) { console.error('Save failed', error); }
+        }
+
+        const state = safeParse(STORAGE_KEY, {
+          theme: 'dark',
+          timer: { duration: 25 * 60, remaining: 25 * 60, running: false },
+          completedSessions: 0,
+          tasks: [],
+          timetable: [],
+          notes: '',
+        });
+
+        function syncTheme() {
+          els.body.dataset.theme = state.theme === 'light' ? 'light' : 'dark';
+        }
+
+        function formatTime(seconds) {
+          const s = Math.max(0, seconds);
+          const m = Math.floor(s / 60).toString().padStart(2, '0');
+          const r = (s % 60).toString().padStart(2, '0');
+          return `${m}:${r}`;
+        }
+
+        function stopTimer() {
+          if (timerId) {
+            clearInterval(timerId);
+            timerId = null;
+          }
+          state.timer.running = false;
+        }
+
+        function beep() {
+          try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            audioCtx ||= new AudioContext();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = 880;
+            gain.gain.value = 0.0001;
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.08, audioCtx.currentTime + 0.03);
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.45);
+            osc.stop(audioCtx.currentTime + 0.5);
+          } catch (error) {
+            console.error('Sound failed', error);
+          }
+        }
+
+        function updateTimer() {
+          const total = state.timer.duration;
+          const remaining = state.timer.remaining;
+          const progress = ((total - remaining) / total) * 100;
+          els.timerDisplay.textContent = formatTime(remaining);
+          els.timerState.textContent = state.timer.running ? 'Focus session in progress' : 'Ready to start';
+          els.timerRing.style.setProperty('--progress', `${Math.max(0, Math.min(100, progress))}%`);
+          els.timerProgress.style.width = `${Math.max(0, Math.min(100, progress))}%`;
+          els.startBtn.textContent = state.timer.running ? 'Running' : 'Start';
+        }
+
+        function updateAnalytics() {
+          els.sessionCountText.textContent = `${state.completedSessions} sessions`;
+          els.completedSessions.textContent = String(state.completedSessions);
+          const percent = Math.min(100, Math.round((state.completedSessions / GOAL_SESSIONS) * 100));
+          els.dailyPercent.textContent = `${percent}%`;
+          els.dailyProgressBar.style.setProperty('--value', `${percent}%`);
+          els.dailyProgressBar.style.width = `${percent}%`;
+          els.tasksDoneStat.textContent = String(state.tasks.filter((task) => task.done).length);
+        }
+
+        function renderTasks() {
+          els.taskList.innerHTML = state.tasks.length
+            ? state.tasks.map((task, index) => `
+              <div class="item ${task.done ? 'done' : ''}">
+                <div>
+                  <h4>${task.text}</h4>
+                  <small>Task ${index + 1}</small>
+                </div>
+                <div class="item-actions">
+                  <button class="btn" type="button" data-action="toggle-task" data-id="${task.id}">${task.done ? 'Undo' : 'Done'}</button>
+                  <button class="btn" type="button" data-action="delete-task" data-id="${task.id}">Delete</button>
+                </div>
+              </div>
+            `).join('')
+            : '<div class="hint">No tasks yet. Add one above.</div>';
+        }
+
+        function renderTimetable() {
+          els.timetableList.innerHTML = state.timetable.length
+            ? state.timetable.map((slot, index) => `
+              <div class="item">
+                <div>
+                  <h4>${slot.subject}</h4>
+                  <p>${slot.time}</p>
+                </div>
+                <div class="item-actions">
+                  <button class="btn" type="button" data-action="delete-slot" data-id="${slot.id}">Delete</button>
+                </div>
+              </div>
+            `).join('')
+            : '<div class="hint">No timetable entries yet.</div>';
+        }
+
+        function persist() {
+          save(STORAGE_KEY, state);
+          updateAnalytics();
+          renderTasks();
+          renderTimetable();
+          updateTimer();
+        }
+
+        function completeSession() {
+          stopTimer();
+          state.completedSessions += 1;
+          state.timer.remaining = state.timer.duration;
+          beep();
+          alert('Pomodoro session complete!');
+          persist();
+        }
+
+        function startTimer() {
+          if (state.timer.running) return;
+          state.timer.running = true;
+          if (timerId) clearInterval(timerId);
+          timerId = setInterval(() => {
+            state.timer.remaining -= 1;
+            if (state.timer.remaining <= 0) {
+              completeSession();
+              return;
+            }
+            persist();
+          }, 1000);
+          persist();
+        }
+
+        function pauseTimer() {
+          stopTimer();
+          persist();
+        }
+
+        function resetTimer() {
+          stopTimer();
+          state.timer.remaining = state.timer.duration;
+          persist();
+        }
+
+        els.startBtn.addEventListener('click', startTimer);
+        els.pauseBtn.addEventListener('click', pauseTimer);
+        els.resetBtn.addEventListener('click', resetTimer);
+
+        els.taskForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          const text = els.taskInput.value.trim();
+          if (!text) return;
+          state.tasks.unshift({ id: Date.now().toString(36), text, done: false });
+          els.taskInput.value = '';
+          persist();
+        });
+
+        els.taskList.addEventListener('click', (event) => {
+          const button = event.target.closest('button[data-action]');
+          if (!button) return;
+          const task = state.tasks.find((item) => item.id === button.dataset.id);
+          if (!task) return;
+          if (button.dataset.action === 'toggle-task') task.done = !task.done;
+          if (button.dataset.action === 'delete-task') state.tasks = state.tasks.filter((item) => item.id !== task.id);
+          persist();
+        });
+
+        els.timetableForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          const subject = els.subjectInput.value.trim();
+          const time = els.timeInput.value.trim();
+          if (!subject || !time) return;
+          state.timetable.unshift({ id: Date.now().toString(36), subject, time });
+          els.subjectInput.value = '';
+          els.timeInput.value = '';
+          persist();
+        });
+
+        els.timetableList.addEventListener('click', (event) => {
+          const button = event.target.closest('button[data-action="delete-slot"]');
+          if (!button) return;
+          state.timetable = state.timetable.filter((item) => item.id !== button.dataset.id);
+          persist();
+        });
+
+        els.notesInput.value = state.notes || '';
+        els.notesInput.addEventListener('input', () => {
+          state.notes = els.notesInput.value;
+          els.noteStatus.textContent = 'Saved locally';
+          save(STORAGE_KEY, state);
+        });
+
+        els.themeToggleBtn.addEventListener('click', () => {
+          state.theme = state.theme === 'dark' ? 'light' : 'dark';
+          syncTheme();
+          save(STORAGE_KEY, state);
+        });
+
+        window.addEventListener('load', () => {
+          const loader = document.querySelector('.loader');
+          if (loader) loader.style.display = 'none';
+        });
+
+        setTimeout(() => {
+          const loader = document.querySelector('.loader');
+          if (loader) loader.style.display = 'none';
+        }, 2000);
+
+        syncTheme();
+        renderTasks();
+        renderTimetable();
+        updateAnalytics();
+        updateTimer();
+        persist();
+        console.log('Feature loaded');
+      } catch (error) {
+        console.error('App crashed:', error);
+        const fallback = document.getElementById('appRoot');
+        if (fallback) fallback.innerHTML = '<div class="card"><h3>Study Focus</h3><p class="hint">The app had a startup issue, but the page is still available.</p></div>';
+      } finally {
+        const loader = document.querySelector('.loader');
+        if (loader) loader.style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>
