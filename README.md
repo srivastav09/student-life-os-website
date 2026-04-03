@@ -1,13 +1,12 @@
 # Student Life OS
 
-Frontend-only, offline-first student productivity app for tasks, timetable, and focus sessions.
+Modern, responsive student life website for tasks, timetable, focus, notes, and daily planning.
 
 ## Stack
 
-- React + TypeScript + Vite
-- Zustand + localStorage
-- Tailwind CSS
-- Framer Motion
+- HTML, CSS, JavaScript
+- Vite
+- localStorage
 
 ## Scripts
 
@@ -21,12 +20,5 @@ Frontend-only, offline-first student productivity app for tasks, timetable, and 
 This repo is configured as a project site.
 
 - Vite `base` is set to `./` for GitHub Pages project deployment
-- Deployment uses GitHub Actions from `.github/workflows/deploy.yml`
-- In GitHub, set `Settings > Pages > Source = GitHub Actions`
-- Release builds happen in GitHub Actions before deploy
-
-## Notes
-
-- The app is offline-first and browser-only.
-- Data persists locally in `localStorage`.
-- Motion respects reduced-motion preferences.
+- Data persists locally in `localStorage`
+- Motion respects reduced-motion preferences
